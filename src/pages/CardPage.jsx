@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import {cardsData} from '../data/cards_data'
+import {cardData} from '../data/cards_data'
 import ScrollPage from "../components/ScrollPage"
 
 export default function CardPage() {
