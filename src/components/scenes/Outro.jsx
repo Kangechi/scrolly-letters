@@ -1,7 +1,9 @@
-export default function Outro() {
+export default function Outro({data}) {
     return(
-        <div>
-            Closing (CTA)
+        <div className="scene-card">
+            <h2 className="scene-label">{data.sub}</h2>
+            <p className="scene-text">{data.line}</p>
+            
         </div>
     )
 }

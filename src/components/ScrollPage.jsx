@@ -4,11 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import HeroScene from './scenes/HeroScene'
 import Message from './scenes/Message'
 import Outro from './scenes/Outro'
+import MemoryScene from "./scenes/MemoryScene";
+import WhoScene from "./scenes/WhoScene";
 
 
 const SCENE_MAP = {
     hero: HeroScene,
+    who: WhoScene,
     message: Message,
+    memory: MemoryScene,
     closing: Outro,
 }
 

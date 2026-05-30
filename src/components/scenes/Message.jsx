@@ -1,7 +1,8 @@
-export default function Message() {
+export default function Message({data}) {
     return(
-        <div>
-            My message
+        <div className="scene-card">
+            <span className="scene-label"> {data.sub}</span>
+            <p className="scene-text">{data.text}</p>   
         </div>
     )
 }
