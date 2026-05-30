@@ -10,7 +10,7 @@ export const cardData = [
         recipient: 'Friend',
         theme: 'hue',
         emoji: '👓',
-        section: [
+        sections: [
             {
                 type: 'hero',
                 headline: 'Happy Birthday Bianca 🌟',
