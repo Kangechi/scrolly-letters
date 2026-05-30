@@ -4,7 +4,7 @@ Basically it stores the structure of what is in the card
 So that the user can type their own stuff, edit & send it to the person
 */
 
- export const cardData = [
+export const cardData = [
     {
         id: 'friend',
         recipient: 'Friend',
