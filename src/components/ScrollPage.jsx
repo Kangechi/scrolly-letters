@@ -42,10 +42,12 @@ function Scene({section}) {
 }
 
 export default function ScrollPage({card}) {
+    return(
     <div className={`card-wrapper theme-${card.theme}`}>
-        {card.section.map((section, i)=> (
+        {card.sections.map((section, i)=> (
             <Scene key={i} section={section}/>
         ))}
 
     </div>
+    )
 }
