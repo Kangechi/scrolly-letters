@@ -12,7 +12,7 @@ export const cardData = [
         emoji: '👓',
         section: [
             {
-                type: 'safe space',
+                type: 'hero',
                 headline: 'Happy Birthday Bianca 🌟',
                 sub: 'To the friend that I can freely open up to'
             },
@@ -31,5 +31,37 @@ export const cardData = [
                 cta: 'Share this card'
             }
         ]
+    },
+    {
+        id: 'friend_2',
+        recipient: 'Baraka',
+        theme: 'mint',
+        emoji: '🐵',
+        sections: [
+            {
+            type: 'hero',
+            headline: 'Happy Birthday Baraka 🥳',
+            sub: 'To the friend who always reaches out'
+            },
+            {
+                type: 'message',
+                text: 'To the person who is alwyas seeking God and seeks to always improve themselves'
+            },
+            {
+                type: 'memory',
+                label: 'A moment I carry',
+                description: 'Describe the memory here'
+
+            },
+            {
+                type: 'closing',
+                line: 'I wish you the best in this new season',
+                cta: 'Share this card'
+
+            }
+
+
+ 
+       ]
     }
 ]
