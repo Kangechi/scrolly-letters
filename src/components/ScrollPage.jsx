@@ -16,7 +16,7 @@ const SCENE_MAP = {
     closing: Outro,
 }
 
-function Scene({section}) {
+function Scene({section, emoji}) {
     const ref = useRef(null)
     const [visible, setVisible] = useState(false)
 
@@ -38,7 +38,7 @@ function Scene({section}) {
         ref={ref}
         className={` scene ${visible ? 'scene--visible' : 'scene--hidden'}`}
         >
-            <Component data={section}/>
+            <Component data={section} emoji={emoji}/>
 
         </div>
     )
@@ -49,7 +49,7 @@ export default function ScrollPage({card}) {
     return(
     <div className={`card-wrapper theme-${card.theme}`}>
         {card.sections.map((section, i)=> (
-            <Scene key={i} section={section}/>
+            <Scene key={i} section={section} emoji={card.emoji}/>
         ))}
 
     </div>

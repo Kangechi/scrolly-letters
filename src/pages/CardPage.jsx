@@ -4,44 +4,64 @@ import ScrollPage from "../components/ScrollPage"
 import { useState, useEffect } from "react"
 import confetti from 'canvas-confetti'
 
-const BIRTHDAY = new Date('2026-06-01T00:00:00')
 
-function Countdown() {
-    const [timeLeft, setTimeLeft] = useState(getTimeLeft())
+function getBirthdayState(birthdayStr){
+    const now = new Date()
+    const birthday = new Date(birthdayStr + 'T00:00:00')
+    
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const birthDate = new Date(birthday.getFullYear(), birthday.getMonth(), birthday.getDate())
 
-    function getTimeLeft() {
-        const diff = BIRTHDAY - new Date()
-        if (diff <= 0) return null
-        return {
-            days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-            hours: Math.floor((diff / (1000 * 60 * 60  )) & 24),
-            minutes: Math.floor((diff / 1000 / 60) % 60),
-            seconds: Math.floor((diff / 1000) % 60),
-        }
+    const diffDays = Math.floor((birthDate - todayDate) / (1000 - 60 * 60 * 24))
+
+    if (diffDays > 0) return {state: 'future', diff: birthday - now}
+    if (diffDays === 0) return {state: 'today'}
+    return {state: 'past', daysLate: Math.abs(diffDays)}
+}
+
+function Countdown({ card }) {
+    const [status, setStatus] = useState(() => getBirthdayState(card.birthday))
+    
+    useEffect(() => {
+        if (status.state !== 'future') return
+        const timer = setInterval(() => setStatus(getBirthdayState(card.birthday)), 1000)
+        return () => clearInterval(timer)
+    }, [status.state])
+
+    if (status.state === 'past') {
+        return (
+            <div className="countdown-late">
+                <p className="countdown-late-main">{card.lateMessage}</p>
+                <p className="countdown-late-sub">{card.lateSub}</p>
+            </div>
+        )
+    }
+    if (status.state === 'today') {
+        return <p className="countdown-today">🎂 Today is the day!</p>
     }
 
-    useEffect(() => {
-        const timer = setInterval(() => setTimeLeft(getTimeLeft()), 1000)
-        return () => clearInterval(timer) 
-    }, [])
+    const timeLeft = {
+        days:    Math.floor(status.diff / (1000 * 60 * 60 * 24)),
+        hours:   Math.floor((status.diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((status.diff / 1000 / 60) % 60),
+        seconds: Math.floor((status.diff / 1000) % 60),
+        
+    }
 
-    if (!timeLeft) return(
-        <p className="countdown-today">🎂 Today is the day!</p>
-    )
     return(
         <div className="countdown">
             {['days', 'hours', 'minutes', 'seconds'].map(unit => (
                 <div className="countdown-unit" key={unit}>
-                      <span className="countdown-num">{String(timeLeft[unit]).padStart(2,'0')}</span>
-                      <span className="countdown-label">{unit}</span>
-
+                    <span className="countdown-num">
+                        {String(timeLeft[unit].padStart(2, '0'))}
+                    </span>
+                    <span className="countdown-label">{unit}</span>
                 </div>
             ))}
 
         </div>
     )
 }
-
 export default function CardPage() {
     const {id} = useParams()
     const card = cardData.find(c => c.id === id)
@@ -49,6 +69,14 @@ export default function CardPage() {
      // ADD THIS LINE:
   console.log("id from URL:", id)
   console.log("card found:", card)
+
+  const CONFETTI_THEMES = {
+    hue: ['#c084fc', '#f472b6', '#818cf8', '#fff'],
+    warm: ['#f59e0b', '#ea580c', '#fcd34d', '#fff'],  
+
+  }
+
+
   function handleRevealed() {
     setRevealed(true)
     setTimeout(() => {
@@ -56,7 +84,7 @@ export default function CardPage() {
             particleCount: 120,
             spread: 80,
             origin: {y: 0.6},
-            colors: ['#c084fc', '#f472b6', '#818cf8', '#fff']
+            colors: CONFETTI_THEMES[card.theme] || CONFETTI_THEMES.hue,
         })
     }, 300)
   }
@@ -70,7 +98,7 @@ export default function CardPage() {
           <span className="landing-emoji">{card.emoji}</span>
           <h2 className="landing-title">Someone sent you<br/>something special</h2>
           <p className="landing-sub">A message made just for you</p>
-          <Countdown />
+          <Countdown  card={card}/>
           <button className="read-me-btn" onClick={handleRevealed}>
             Read Me ✨
           </button>

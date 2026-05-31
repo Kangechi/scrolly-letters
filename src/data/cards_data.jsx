@@ -10,6 +10,7 @@ export const cardData = [
         recipient: 'Friend',
         theme: 'hue',
         emoji: '👓',
+        birthday: '2026-06-01',
         sections: [
             {
                 type: 'hero',
@@ -42,14 +43,16 @@ export const cardData = [
         ]
     },
     {
-        id: 'friend_2',
+        id: 'for_Baraka',
         recipient: 'Baraka',
-        theme: 'mint',
+        theme: 'warm',
         emoji: '🐵',
+        lateMessage: 'A bit later than expected',
+        lateSub: 'But all good things take time....',
         sections: [
             {
             type: 'hero',
-            headline: 'Happy Birthday Baraka 🥳',
+            headline: 'Happy Birthday Baraka 💫',
             sub: 'To the one who pursues Christ and growth.'
             },
             {
@@ -59,16 +62,18 @@ export const cardData = [
             },
             {
                 type: 'message',
-                text: "To the person who is alwyas seeking God and seeks to always improve themselves. It's an honour to know you and to be your friend. It's beautiful to see yourpassion for christ and the drive you have to continuosly improve yourself. "
+                sub: 'What I have to say......',
+                text: "To the person who is alwyas seeking God and seeks to always improve themselves. It's an honour to know you and to be your friend. It's beautiful to see your passion for christ and the drive you have to continuosly improve yourself. As you grow older, I'm happy for you. This is because it means that the journey your on.. God is not done with you yet. I wish you all the best as you continue to navigate life and grow into who God created you to be."
             },
             {
                 type: 'memory',
                 label: 'A moment I carry',
-                description: 'Having a conversation with you at the service was a lovely and interesting experience, leading to our friendship today.'
+                text: 'Having a conversation with you at the service was a lovely and interesting experience, leading to our friendship today.'
 
             },
             {
                 type: 'closing',
+                text: 'My prayer for you',
                 line: 'May God grant you favour and clarity as you transition into a new season',
                 cta: 'Share this card'
 
