@@ -72,6 +72,43 @@ Each recipient gets their own color personality
   --card-bg: #02190a;
 }
 
+.theme-lovely {
+  --accent: #DB3E8C;
+  --accent-2: #FFAFEB;
+  --bg: #8d51a8;
+  --card-bg: #ac8ed7; 
+
+}
+
+.theme-exec {
+  --accent: #F4D08F;
+  --accent-2: #EDE3DD;
+  --bg: #0E2A3F;
+  --card-bg: #BF8843;
+
+}
+.theme-arsenal {
+  --accent: #eadfe0;
+  --accent-2: #ef0107;
+  --bg: #023474;
+  --card-bg: #9C824A;
+}
+.theme-bubbly {
+  --accent: #d99201;
+  --accent-2: #905A01;
+  --bg: #58761B;
+  --card-bg: #1A3F22;
+
+}
+.theme-blue {
+  --accent: #7096d1;
+  --accent-2: #BAD6EB;
+  --bg: #334EAC;
+  --card-bg: #1A2E6C;
+
+
+}
+
 .card-wrapper {
   background: var(--bg);
   min-height: 100vh;

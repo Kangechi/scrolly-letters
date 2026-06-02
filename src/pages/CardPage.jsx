@@ -73,6 +73,11 @@ export default function CardPage() {
   const CONFETTI_THEMES = {
     hue: ['#c084fc', '#f472b6', '#818cf8', '#fff'],
     warm: ['#f59e0b', '#ea580c', '#fcd34d', '#fff'],  
+    blue: ['#7096d1', '#BAD6EB','#334EAC', '#1A2E6C'],
+    arsenal: ['#eadfe0','#ef0107', '#023474', '#9C824A'],
+    lovely: ['#DB3E8C','#FFAFEB','#8d51a8','#ac8ed7'],
+    exec: ['#F4D08F', '#EDE3DD', '#0E2A3F','#BF8843'],
+    bubbly: ['#d99201', '#905A01', '#58761B', '#1A3F22']
 
   }
 
