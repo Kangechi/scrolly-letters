@@ -164,9 +164,9 @@ With this new design, everything works out the way the user should map in.
 */
 
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
-import { cardData } from "../data/cards_data"
+import { supabase } from "../lib/supabase"
 
 const PANELS = [
     {
@@ -212,7 +212,8 @@ function Panel({panel, onReveal}) {
 
 function Card({card}) {
     return (
-        <div className="scene-card">\ <span className="scene-emoji">{card.emoji}</span>
+        <div className="scene-card">
+         <span className="scene-emoji">{card.emoji}</span>
          <p className="scene-sub">{card.recipient}</p>
          <Link to={`/card/${card.id}`}>
          <button className="cta-button">View Card →</button>
@@ -224,6 +225,19 @@ function Card({card}) {
 
 export default function Home() {
     const [showCards, setShowCards] = useState(false)
+    const [cards, setCards] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        supabase
+            .from('cards')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .then(({ data, error }) => {
+                if (!error) setCards(data)
+                setLoading(false)
+            })
+    }, [])
 
     function handleReveal() {
         setShowCards(true)
@@ -245,11 +259,18 @@ export default function Home() {
             {showCards && (
                 <section id="cards-grid" className="cards-section cards-section--reveal">
                     <div className="home-grid">
-                        {cardData.map((card) => (
+                        {loading && <p className="home-sub">Loading cards…</p>}
+                        {!loading && cards.length === 0 && (
+                            <p className="home-sub">No cards yet — be the first to create one ✨</p>
+                        )}
+                        {cards.map((card) => (
                             <Card key={card.id} card={card}/>
                         ))}
 
                     </div>
+                    <Link to={`/create`} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                    <button className="cta-button" style={{display: "flex", alignItems: 'center'}}>Create your card</button>
+                    </Link>
                 </section>
 
             )}

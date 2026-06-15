@@ -13,7 +13,7 @@ html {
 }
 body {
   font-family: 'Segoe UI', system-ui, sans-serif ;
-  background: #14252a;
+  background: linear-gradient(130, var(--accent), var(--accent)) ;
   color: #000000;
   overflow-x: hidden;
 
@@ -114,13 +114,19 @@ Each recipient gets their own color personality
 }
 
 .card-wrapper {
-  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, var(--bg), var(--card-bg), var(--bg));
+  background-size: 200% 200%;
+  animation: gradient-drift 16s ease-in-out infinite;
   min-height: 100vh;
 }
 
 /* Shared CARD components */
 
 .scene-card {
+  position: relative;
+  z-index: 1;
   background: var(--card-bg);
   border: 1px solid var(--accent);
   border-radius: 24px;
@@ -211,12 +217,105 @@ Each recipient gets their own color personality
   0%, 100% { transform: translateY(0);}
   50% {transform: translateY(-12px);}
 }
+
+@keyframes gradient-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ================================
+   AMBIENT BACKGROUND
+   Glow orbs + floating emoji, themed
+   per-card via --accent / --accent-2
+================================ */
+
+.ambient-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.35;
+}
+
+.glow-orb--one {
+  width: 22rem;
+  height: 22rem;
+  top: -6rem;
+  left: -6rem;
+  background: var(--accent);
+  animation: orb-drift-a 22s ease-in-out infinite;
+}
+
+.glow-orb--two {
+  width: 18rem;
+  height: 18rem;
+  bottom: -5rem;
+  right: -4rem;
+  background: var(--accent-2);
+  animation: orb-drift-b 26s ease-in-out infinite;
+}
+
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6rem, 4rem) scale(1.15); }
+}
+
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-5rem, -3rem) scale(1.1); }
+}
+
+.ambient-emoji {
+  position: absolute;
+  opacity: 0.1;
+  filter: blur(1px);
+  animation: ambient-float 20s ease-in-out infinite;
+}
+
+.ambient-emoji--one {
+  top: 14%;
+  left: 12%;
+  font-size: 3rem;
+  animation-duration: 19s;
+}
+
+.ambient-emoji--two {
+  top: 55%;
+  right: 10%;
+  font-size: 4rem;
+  animation-duration: 25s;
+  animation-delay: -6s;
+}
+
+.ambient-emoji--three {
+  bottom: 10%;
+  left: 28%;
+  font-size: 2.5rem;
+  animation-duration: 22s;
+  animation-delay: -11s;
+}
+
+@keyframes ambient-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2.5rem) rotate(10deg); }
+}
 /* ================================
    LANDING SCREEN
 ================================ */
 .landing {
+  position: relative;
+  overflow: hidden;
   min-height: 100vh;
-  background: var(--bg);
+  background: linear-gradient(120deg, var(--bg), var(--card-bg), var(--bg));
+  background-size: 200% 200%;
+  animation: gradient-drift 16s ease-in-out infinite;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,6 +323,8 @@ Each recipient gets their own color personality
 }
 
 .landing-inner {
+  position: relative;
+  z-index: 1;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -401,5 +502,128 @@ Each recipient gets their own color personality
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Create page form elements */
+
+.create-card {
+  text-align: left;
+}
+
+.create-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 1.25rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: #e2e8f0;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.create-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.create-textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.create-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.create-pill {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.create-pill--active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #000;
+  font-weight: 700;
+}
+
+.create-pill:hover {
+  transform: scale(1.05);
+}
+
+.create-error {
+  color: #f87171;
+  margin-bottom: 1rem;
+}
+
+.create-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.create-layout .create-card {
+  max-width: none;
+}
+
+.card-wrapper.preview-frame {
+  position: sticky;
+  top: 2rem;
+  height: calc(100vh - 4rem);
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 24px;
+  border: 1px solid var(--accent);
+}
+.preview-frame .scene-card {
+  padding: 1.5rem 1.25rem;
+  max-width: none;
+
+}
+.preview-frame .scene{
+  min-height: auto;
+  padding: 1.5rem;
+}
+.preview-frame .scene-emoji {
+  font-size: 2.5rem;
+}
+
+.preview-frame .scene-headline{
+  font-size: 1.5rem;
+}
+
+.preview-frame .scene-sub,
+.preview-frame .scene-text {
+  font-size: 0.85rem;
+}
+
+.preview-frame .scene-label {
+  font-size: 0.7rem;
+}
+
+@media (max-width: 900px) {
+  .create-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card-wrapper.preview-frame {
+    position: static;
+    height: 70vh;
   }
 }

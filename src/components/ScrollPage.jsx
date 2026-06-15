@@ -1,6 +1,7 @@
 
 
 import { useState, useEffect, useRef } from "react";
+import AmbientBackground from './AmbientBackground'
 import HeroScene from './scenes/HeroScene'
 import Message from './scenes/Message'
 import Outro from './scenes/Outro'
@@ -8,7 +9,7 @@ import MemoryScene from "./scenes/MemoryScene";
 import WhoScene from "./scenes/WhoScene";
 
 
-const SCENE_MAP = {
+export const SCENE_MAP = {
     hero: HeroScene,
     who: WhoScene,
     message: Message,
@@ -48,6 +49,7 @@ function Scene({section, emoji}) {
 export default function ScrollPage({card}) {
     return(
     <div className={`card-wrapper theme-${card.theme}`}>
+        <AmbientBackground emoji={card.emoji} />
         {card.sections.map((section, i)=> (
             <Scene key={i} section={section} emoji={card.emoji}/>
         ))}

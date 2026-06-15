@@ -1,8 +1,9 @@
 import { useParams } from "react-router-dom";
-import {cardData} from '../data/cards_data'
 import ScrollPage from "../components/ScrollPage"
+import AmbientBackground from "../components/AmbientBackground"
 import { useState, useEffect } from "react"
 import confetti from 'canvas-confetti'
+import { supabase } from '../lib/supabase'
 
 
 function getBirthdayState(birthdayStr){
@@ -12,7 +13,7 @@ function getBirthdayState(birthdayStr){
     const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const birthDate = new Date(birthday.getFullYear(), birthday.getMonth(), birthday.getDate())
 
-    const diffDays = Math.floor((birthDate - todayDate) / (1000 - 60 * 60 * 24))
+    const diffDays = Math.floor((birthDate - todayDate) / (1000  * 60 * 60 * 24))
 
     if (diffDays > 0) return {state: 'future', diff: birthday - now}
     if (diffDays === 0) return {state: 'today'}
@@ -53,7 +54,7 @@ function Countdown({ card }) {
             {['days', 'hours', 'minutes', 'seconds'].map(unit => (
                 <div className="countdown-unit" key={unit}>
                     <span className="countdown-num">
-                        {String(timeLeft[unit].padStart(2, '0'))}
+                        {String(timeLeft[unit]).padStart(2, '0')}
                     </span>
                     <span className="countdown-label">{unit}</span>
                 </div>
@@ -64,11 +65,28 @@ function Countdown({ card }) {
 }
 export default function CardPage() {
     const {id} = useParams()
-    const card = cardData.find(c => c.id === id)
+    const [card, setCard] = useState(null)
+    const [loading, setLoading] = useState(true)
     const [revealed, setRevealed] = useState(false)
-     // ADD THIS LINE:
-  console.log("id from URL:", id)
-  console.log("card found:", card)
+
+    useEffect(() => {
+        let cancelled = false
+        setLoading(true)
+        setCard(null)
+
+        supabase
+            .from('cards')
+            .select('*')
+            .eq('id', id)
+            .single()
+            .then(({ data, error }) => {
+                if (cancelled) return
+                setCard(error ? null : data)
+                setLoading(false)
+            })
+
+        return () => { cancelled = true }
+    }, [id])
 
   const CONFETTI_THEMES = {
     hue: ['#c084fc', '#f472b6', '#818cf8', '#fff'],
@@ -94,16 +112,20 @@ export default function CardPage() {
     }, 300)
   }
 
-    if (!card) return <div>Card not Found 🫤</div>
+    if (loading) return <div className="landing"><p className="landing-sub">Loading your card…</p></div>
+    if (!card) return <div className="landing"><p className="landing-sub">Card not Found 🫤</p></div>
 
     if (!revealed) {
         return(
              <div className={`landing theme-${card.theme}`}>
+        <AmbientBackground emoji={card.emoji} />
         <div className="landing-inner">
           <span className="landing-emoji">{card.emoji}</span>
           <h2 className="landing-title">Someone sent you<br/>something special</h2>
           <p className="landing-sub">A message made just for you</p>
-          <Countdown  card={card}/>
+          {
+            card.birthday && <Countdown card={card}/>
+          }
           <button className="read-me-btn" onClick={handleRevealed}>
             Read Me ✨
           </button>
