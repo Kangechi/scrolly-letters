@@ -50,12 +50,12 @@ Each recipient gets their own color personality
 
 */
 
-.theme-hue {
+/* .theme-hue {
   --accent: #c084fc;
   --accent-2: #f472b6;
   --bg: #1a0a2e;
   --card-bg: #2d1b4e;
-}
+} */
 
 .theme-mint {
   --accent: #34d399;
@@ -65,7 +65,7 @@ Each recipient gets their own color personality
 
 }
 
-.theme-warm {
+/* .theme-warm {
   --accent: #f59e0b;
   --accent-2: #ea580c;
   --bg: #343817;
@@ -78,7 +78,7 @@ Each recipient gets their own color personality
   --bg: #8d51a8;
   --card-bg: #ac8ed7; 
 
-}
+} */
 
 .theme-exec {
   --accent: #F4D08F;
@@ -93,13 +93,13 @@ Each recipient gets their own color personality
   --bg: #023474;
   --card-bg: #9C824A;
 }
-.theme-bubbly {
+/* .theme-bubbly {
   --accent: #d99201;
   --accent-2: #905A01;
   --bg: #58761B;
   --card-bg: #1A3F22;
 
-}
+} */
 .theme-blue {
   --accent: #7096d1;
   --accent-2: #BAD6EB;
@@ -110,9 +110,29 @@ Each recipient gets their own color personality
 }
 .theme-home {
   --accent: #7096d1;
-  --accent-2: #BAD6EB;
+  --accent-2: #080909;
 }
 
+.theme-burnt {
+  --accent: #B28565;
+  --accent-2: #908786;
+  --bg: #635D5C;
+  --card-bg: #373231;
+}
+
+.theme-bold {
+  --accent:#1A2730;
+  --accent-2: #45586c;
+  --bg: #f09475;
+  --card-bg: #6bafda;
+}
+
+.theme-electric{
+  --accent: #0090A3;
+  --accent-2: #87F1FF;
+  --bg: #5fafce;
+  --card-bg: #1A2730;
+}
 .card-wrapper {
   position: relative;
   overflow: hidden;
@@ -211,6 +231,13 @@ Each recipient gets their own color personality
 
 }
 
+
+.cta-button--ghost {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  margin-top: 0.75rem;
+}
 /* Floating animation */
 
 @keyframes float {
@@ -431,8 +458,11 @@ Each recipient gets their own color personality
 }
 .home-wrapper {
   min-height: 100vh;
-  background: linear-gradient(135deg, #94a3b8, #c084fc, #ac8ed7, #FFAFEB, #334EAC);
+  width: 100vw;
+  background: linear-gradient(135deg, #0E2A3F, #1a3a5c, #0E3A3F, #c8d373, #BF8843);
+  background-size: 400% 400%;
   padding: 3rem 2rem;
+  animation: gradient-drift 20s ease-in-out infinite;
   text-align: center;
 }
 
@@ -445,7 +475,7 @@ Each recipient gets their own color personality
 }
 
 .home-text {
-  color: #160151;
+  color: #e6e5e4;
   font-size: clamp(2rem, 6vw, 3.5rem);
   font-weight: 800;
   line-height: 1.2;
@@ -455,7 +485,7 @@ Each recipient gets their own color personality
 }
 .home-sub {
   font-size: 1rem;
-  color: #011229;
+  color: #b1c5e0;
 
 
 }
@@ -464,8 +494,6 @@ Each recipient gets their own color personality
   overflow-y: hidden;
   display: flex;
   scroll-snap-type: x mandatory;
-  width: 100vw;
-  height: 100vh;
   scrollbar-width: none;
 }
 
@@ -486,6 +514,42 @@ Each recipient gets their own color personality
   gap: 1.25rem;
 }
 
+.land-panel--active .home-text{
+  animation: fadeSlideUp 0.6s ease forwards;
+}
+
+.land-panel--active .home-sub{
+  animation: fadeSlideUp 0.8s ease 0.1s forwards;
+}
+
+.panel-dots {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.panel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.panel-dot--active {
+  background: #F4D08F;
+  transform: scale(1.4);
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px);}
+to { opacity: 1; transform: translateY(0);}
+}
 .cards-section {
   padding: 4rem 2rem;
 }
@@ -617,6 +681,9 @@ Each recipient gets their own color personality
   font-size: 0.7rem;
 }
 
+.preview-scroll-btn {
+  display: none;
+}
 @media (max-width: 900px) {
   .create-layout {
     grid-template-columns: 1fr;
@@ -626,4 +693,74 @@ Each recipient gets their own color personality
     position: static;
     height: 70vh;
   }
+  .preview-scroll-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 1.25rem;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    border: 1px dashed var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+  }
 }
+
+/* Watermark */
+.card-wrapper::after {
+  content: 'Scrolly Letters • Scrolly Letters • Scrolly Letters •';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  width: 200%;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.4rem;
+  color: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 50;
+}
+
+/* Share modal */
+.share-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.share-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.share-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+

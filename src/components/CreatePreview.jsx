@@ -11,7 +11,7 @@ export default function CreatePreview({sections, theme, emoji}) {
 
                 return (
                     <div className="scene scene--visible" key={i}>
-                        <Component data={section} emoji={emoji}/>
+                        <Component data={section} emoji={emoji} isPreview={true}/>
                     </div>
                 )
 

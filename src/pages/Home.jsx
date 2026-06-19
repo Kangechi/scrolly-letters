@@ -164,11 +164,11 @@ With this new design, everything works out the way the user should map in.
 */
 
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link } from "react-router-dom"
 import { supabase } from "../lib/supabase"
 
-const PANELS = [
+/* const PANELS = [
     {
         id: 1,
         heading: 'Welcome to Everday Gift Cards',
@@ -190,23 +190,48 @@ const PANELS = [
         sub: 'Check out the cards below, create your own and send the person you love something they won\'t forget',
         isCta: true
     },
+] */
+
+const PANELS = [
+    {
+        id: 1,
+        heading: 'Did you forget a Father\'s day gift?',
+        sub: 'Don\'t stress, it happens to the best of us'
+    },
+    {
+        id: 2,
+        heading: 'Well... you can send them a digital card',
+        sub: 'A small way of saying "I love you & see you"'
+    },
+    {
+        id: 3,
+        heading: 'Don\'t miss out on this chance',
+        sub: 'Remind your dad how special he is to you'
+    },
+    {
+        id: 4,
+        heading: ' Are you ready for that?',
+        sub: 'Create your own Card below to send to him',
+        isCta: true
+    }
 ]
 
-function Panel({panel, onReveal}) {
+function Panel({panel, onReveal, isActive, index, total}) {
     return (
-        <div className="land-panel">
+        <div className={`land-panel ${isActive ? 'land-panel--active' : ''}`}>
             <h1 className="home-text">
                 {panel.heading}
             </h1>
             <p className="home-sub">{panel.sub}</p>
-             <span style={{ fontSize: '1rem', opacity: 0.6 }}>scroll → </span>
-            {panel.isCta && (
-                <button className="cta-button" onClick={onReveal}>
-                    See the Cards ↓
-                </button>
+            {!panel.isCta && (
+               <span style={{ fontSize: '1rem', opacity: 0.6 }}>scroll → </span>
             )}
-
-        </div>
+            {panel.isCta && (
+        <button className="cta-button" onClick={onReveal}>
+          I'm ready ✨
+        </button>
+      )}
+    </div>
     )
 }
 
@@ -227,6 +252,8 @@ export default function Home() {
     const [showCards, setShowCards] = useState(false)
     const [cards, setCards] = useState([])
     const [loading, setLoading] = useState(true)
+    const [activePanel, setActivePanel] = useState(0)
+    const landRef = useRef(null)
 
     useEffect(() => {
         supabase
@@ -237,6 +264,17 @@ export default function Home() {
                 if (!error) setCards(data)
                 setLoading(false)
             })
+    }, [])
+
+    useEffect(() => {
+        const el = landRef.current
+        if (!el) return
+        function handleScroll() {
+            const index = Math.round(el.scrollLeft / el.offsetWidth)
+            setActivePanel(index)
+        }
+        el.addEventListener('scroll', handleScroll, {passive: true})
+        return () => el.removeEventListener('scroll', handleScroll)
     }, [])
 
     function handleReveal() {
@@ -250,11 +288,20 @@ export default function Home() {
 
     return (
         <div className="home-wrapper">
-            <section className="land-cont">
-                {PANELS.map((panel) => (
-                    <Panel key={panel.id} panel={panel} onReveal={handleReveal}/>
+            <section  ref={landRef} className="land-cont">
+                {PANELS.map((panel, i) => (
+                    <Panel key={panel.id} panel={panel} onReveal={handleReveal}
+                    isActive={activePanel === i} index={i} total={PANELS.length}
+                    />
                 ))}
             </section>
+             <div className="panel-dots">
+                    {PANELS.map((_, i) => (
+                        <span
+                        key={i} className={`panel-dot ${activePanel === i ? 'panel-dot--active' : ''}`}/>
+                    ))}
+
+                </div>
 
             {showCards && (
                 <section id="cards-grid" className="cards-section cards-section--reveal">

@@ -4,9 +4,9 @@ import { nanoid } from 'nanoid'
 import { supabase } from '../lib/supabase'
 import CreatePreview from '../components/CreatePreview'
 
-const OCCASIONS = ['Birthday', 'Anniversary', 'Thank You', 'Encouragement', 'Apology', 'Just Because']
-const THEMES = ['hue', 'mint', 'warm', 'lovely', 'exec', 'arsenal', 'bubbly', 'blue']
-const EMOJIS = ['🎉', '💌', '🌸', '✨', '🎂', '☀️', '🥹', '🎈']
+const OCCASIONS = ['Happy Father\'s Day','Birthday', 'Anniversary', 'Thank You', 'Encouragement', 'Apology', 'Just Because']
+const THEMES = [/* 'hue', */ 'mint',/*  'warm', 'lovely', */ 'exec', 'arsenal', /* 'bubbly', */ 'blue', 'bold', 'electric', 'burnt' ]
+const EMOJIS = [/* '🎉', '💌', '🌸', '✨', '🎂', '☀️', '🥹', '🎈', */ '👨🏽‍🍼', '🥸','🧔🏽','👨🏽', '👔', '👑']
 
 const initialState = {
   occasion: OCCASIONS[0],
@@ -191,13 +191,24 @@ export default function Create() {
           onChange={(e) => setField('closing', e.target.value)}
         />
 
+        <button
+          type="button"
+          className="preview-scroll-btn"
+          onClick={() => document.getElementById('card-preview')
+            .scrollIntoView({ behavior: 'smooth' })}
+        >
+          See your card preview ↓
+        </button>
+        
         {error && <p className="create-error">{error}</p>}
 
         <button className="cta-button" onClick={handleSubmit} disabled={submitting}>
           {submitting ? 'Creating…' : 'Create Card ✨'}
         </button>
       </div>
+      <div id='card-preview'>
       <CreatePreview sections={sections} theme={state.theme} emoji={state.emoji}/>
+      </div>
     </div>
   )
 }
