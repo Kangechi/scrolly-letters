@@ -195,23 +195,23 @@ import { supabase } from "../lib/supabase"
 const PANELS = [
     {
         id: 1,
-        heading: 'Did you forget a Father\'s day gift?',
-        sub: 'Don\'t stress, it happens to the best of us'
+        heading: 'Cards.. 💌✉️',
+        sub: 'Perhaps the most convinent gift that we give to our loved ones 🥰💝'
     },
     {
         id: 2,
-        heading: 'Well... you can send them a digital card',
-        sub: 'A small way of saying "I love you & see you"'
+        heading: 'But who said they are for special days?🤔',
+        sub: 'I think Cards are for everyday....'
     },
     {
         id: 3,
-        heading: 'Don\'t miss out on this chance',
-        sub: 'Remind your dad how special he is to you'
+        heading: 'So why not send them something....',
+        sub: 'A reminder, apology, appreciation, birthday note, date invitation'
     },
     {
         id: 4,
-        heading: ' Are you ready for that?',
-        sub: 'Create your own Card below to send to him',
+        heading: 'Wanna try? Reach out to someone special.',
+        sub: 'Well then.... start here 😁',
         isCta: true
     }
 ]

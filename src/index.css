@@ -459,7 +459,7 @@ Each recipient gets their own color personality
 .home-wrapper {
   min-height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, #0E2A3F, #1a3a5c, #0E3A3F, #c8d373, #BF8843);
+  background: linear-gradient(135deg, #ff9500, #ffbe3b, #BE0064, #d166ff, #7777e7);
   background-size: 400% 400%;
   padding: 3rem 2rem;
   animation: gradient-drift 20s ease-in-out infinite;

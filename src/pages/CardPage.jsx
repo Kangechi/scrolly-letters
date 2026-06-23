@@ -95,7 +95,10 @@ export default function CardPage() {
     arsenal: ['#eadfe0','#ef0107', '#023474', '#9C824A'],
     lovely: ['#DB3E8C','#FFAFEB','#8d51a8','#ac8ed7'],
     exec: ['#F4D08F', '#EDE3DD', '#0E2A3F','#BF8843'],
-    bubbly: ['#d99201', '#905A01', '#58761B', '#1A3F22']
+    bubbly: ['#d99201', '#905A01', '#58761B', '#1A3F22'],
+    burnt: ['#B28565', '#908786', '#635D5C', '#373231'],
+    bold: ['#1A2730', '#45586c', '#f09475', "#6bafda"],
+    electric: ['#0090A3', '#87f1ff', '#5fafce', '#1A2730']
 
   }
 

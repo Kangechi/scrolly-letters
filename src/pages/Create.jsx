@@ -5,8 +5,8 @@ import { supabase } from '../lib/supabase'
 import CreatePreview from '../components/CreatePreview'
 
 const OCCASIONS = ['Happy Father\'s Day','Birthday', 'Anniversary', 'Thank You', 'Encouragement', 'Apology', 'Just Because']
-const THEMES = [/* 'hue', */ 'mint',/*  'warm', 'lovely', */ 'exec', 'arsenal', /* 'bubbly', */ 'blue', 'bold', 'electric', 'burnt' ]
-const EMOJIS = [/* '🎉', '💌', '🌸', '✨', '🎂', '☀️', '🥹', '🎈', */ '👨🏽‍🍼', '🥸','🧔🏽','👨🏽', '👔', '👑']
+const THEMES = [ 'hue', 'mint', 'warm', 'lovely',  'exec', 'arsenal',  'bubbly', 'blue', 'bold', 'electric', 'burnt' ]
+const EMOJIS = ['🎉', '💌', '🌸', '✨', '🎂', '☀️', '🥹', '🎈',  '👨🏽‍🍼', '🥸','🧔🏽','👨🏽', '👔', '👑']
 
 const initialState = {
   occasion: OCCASIONS[0],
