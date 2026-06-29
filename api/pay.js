@@ -13,10 +13,10 @@ export default async function handler(req, res) {
     }
     //Paystack needs the +254 format of the phone number hence a function
     function formatPhone(raw) {
-        const cleaned = raw.replace(/\D/g, '')
-        if (cleaned.startsWith('254')) return cleaned
-        if (cleaned.startsWith('0')) return '254' + cleaned.slice(1)
-            return '254' + cleaned
+        let cleaned = raw.replace(/\D/g, '')
+        if (cleaned.startsWith('254')) cleaned = '0' + cleaned.slice(3)  // 254725942987 → 0725942987
+        if (!cleaned.startsWith('0'))  cleaned = '0' + cleaned           // 725942987    → 0725942987
+        return cleaned
     }
 
     try {
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         const data = await charge.json()
 
         if (!data.status) {
-            return res.status(400).json({error: data.message || "Could not start payment"})
+            return res.status(400).json({error: data.message || "Could not start payment", details: data})
         }
 
         return res.status(200).json({reference: data.data?.reference})
