@@ -14,9 +14,9 @@ export default async function handler(req, res) {
     //Paystack needs the +254 format of the phone number hence a function
     function formatPhone(raw) {
         let cleaned = raw.replace(/\D/g, '')
-        if (cleaned.startsWith('254')) cleaned = '0' + cleaned.slice(3)  // 254725942987 → 0725942987
-        if (!cleaned.startsWith('0'))  cleaned = '0' + cleaned           // 725942987    → 0725942987
-        return cleaned
+        if (cleaned.startsWith('0'))   cleaned = '254' + cleaned.slice(1) // 0725942987   → 254725942987
+        if (!cleaned.startsWith('254')) cleaned = '254' + cleaned          // 725942987    → 254725942987
+        return '+' + cleaned                                              // → +254725942987 (E.164)
     }
 
     try {
