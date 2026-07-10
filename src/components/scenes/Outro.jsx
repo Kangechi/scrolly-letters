@@ -8,6 +8,7 @@ export default function Outro({ data, isPreview }) {
   const [phone, setPhone] = useState('')
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(120)
 
   // Get the cardId from the URL: /card/xK9p2a → "xK9p2a"
   const cardId = window.location.pathname.split('/').pop()
@@ -47,7 +48,7 @@ export default function Outro({ data, isPreview }) {
             clearInterval(interval)
           }
         })
-    }, 2000)
+    }, 1000)
 
     // Give up after 2 minutes so the user isn't stuck on a spinner
     const timeout = setTimeout(() => {
@@ -62,6 +63,19 @@ export default function Outro({ data, isPreview }) {
     }
   }, [paymentStep, cardId])
 
+  // ── 2b. COUNTDOWN — purely visual, ticks alongside the polling above so
+  // the reader can see how long they actually have left before timeout.
+  useEffect(() => {
+    if (paymentStep !== 'waiting') return
+    setSecondsLeft(120)
+
+    const tick = setInterval(() => {
+      setSecondsLeft((s) => Math.max(s - 1, 0))
+    }, 1000)
+
+    return () => clearInterval(tick)
+  }, [paymentStep])
+
   // ── 3. START PAYMENT ───────────────────────────────────────
   async function handlePay() {
     if (!phone.trim()) {
@@ -69,7 +83,7 @@ export default function Outro({ data, isPreview }) {
       return
     }
     setError(null)
-    setPaymentStep('waiting')
+    setPaymentStep('sending')   // ← no countdown yet, we haven't sent the STK push
 
     try {
       const res = await fetch('/api/pay', {
@@ -81,8 +95,10 @@ export default function Outro({ data, isPreview }) {
       if (!res.ok) {
         setError(result.error || 'Something went wrong')
         setPaymentStep('phone')
+        return
       }
-      // on success we stay in 'waiting' — polling takes over
+      // Paystack confirmed the push was sent — THIS is when the real wait starts
+      setPaymentStep('waiting')
     } catch (err) {
       setError('Network error. Please try again.')
       setPaymentStep('phone')
@@ -119,11 +135,11 @@ export default function Outro({ data, isPreview }) {
       {!isPreview && paymentStep !== 'idle' && (
         <div
           className="share-backdrop"
-          onClick={() => { if (paymentStep !== 'waiting') setPaymentStep('idle') }}
+          onClick={() => { if (paymentStep !== 'waiting' && paymentStep !== 'sending') setPaymentStep('idle') }}
         >
           <div className="share-modal" onClick={e => e.stopPropagation()}>
 
-            {paymentStep !== 'waiting' && (
+            {paymentStep !== 'waiting' && paymentStep !== 'sending' && (
               <button className="share-modal-close" onClick={() => setPaymentStep('idle')}>✕</button>
             )}
 
@@ -148,6 +164,17 @@ export default function Outro({ data, isPreview }) {
               </>
             )}
 
+            {/* STEP: sending — before we know the STK push actually went out */}
+            {paymentStep === 'sending' && (
+              <>
+                <p className="scene-label">Starting payment…</p>
+                <p className="scene-sub">
+                  Sending a payment request for {phone}. This can take up to 15 seconds.
+                </p>
+                <div className="payment-spinner" />
+              </>
+            )}
+
             {/* STEP: waiting for payment */}
             {paymentStep === 'waiting' && (
               <>
@@ -157,7 +184,7 @@ export default function Outro({ data, isPreview }) {
                 </p>
                 <div className="payment-spinner" />
                 <p className="scene-sub" style={{ fontSize: '0.8rem', opacity: 0.6 }}>
-                  Waiting for confirmation…
+                  Waiting for confirmation… {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')} left
                 </p>
               </>
             )}

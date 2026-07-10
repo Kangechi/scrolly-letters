@@ -33,6 +33,11 @@ export default async function handler(req, res) {
 
     const event = JSON.parse(rawBody)
 
+    // TEMP diagnostic — tells us the real event name Paystack sends for a
+    // cancelled/declined charge, so we can add a matching failure branch
+    // below instead of guessing. Safe to remove once we've captured it.
+    console.log('Paystack webhook event:', event.event)
+
     if (event.event === 'charge.success') {
         const cardId = event.data?.metadata?.cardId
 
