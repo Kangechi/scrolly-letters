@@ -39,12 +39,18 @@ export default function Outro({ data, isPreview }) {
     const interval = setInterval(() => {
       supabase
         .from('cards')
-        .select('paid')
+        .select('paid, payment_failed')
         .eq('id', cardId)
         .single()
         .then(({ data: card }) => {
           if (card?.paid) {
             setPaymentStep('paid')
+            clearInterval(interval)
+          } else if (card?.payment_failed) {
+            // webhook confirmed this attempt failed — no need to wait out
+            // the full timeout, we already know the answer
+            setPaymentStep('failed')
+            setError('Payment was not completed. Please try again.')
             clearInterval(interval)
           }
         })

@@ -1,4 +1,4 @@
-
+import { createClient } from "@supabase/supabase-js"
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -6,11 +6,19 @@ export default async function handler(req, res) {
     }
 
     const {phone,  cardId} = req.body
-    
+
     if (!phone || !cardId) {
         return res.status(400).json({error: 'phone and cardId are required'})
 
     }
+
+    // Reset any stale failure flag from a previous attempt — otherwise a
+    // retry would instantly see last time's failure and bail immediately.
+    const supabase = createClient(
+        process.env.VITE_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+    await supabase.from('cards').update({ payment_failed: false }).eq('id', cardId)
     //Paystack needs the +254 format of the phone number hence a function
     function formatPhone(raw) {
         let cleaned = raw.replace(/\D/g, '')
