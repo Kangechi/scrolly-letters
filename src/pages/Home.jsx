@@ -195,28 +195,28 @@ import { supabase } from "../lib/supabase"
 const PANELS = [
     {
         id: 1,
-        heading: 'Cards.. 💌✉️',
+        heading: 'Everday Gift Cards',
         sub: 'Perhaps the most convinent gift that we give to our loved ones 🥰💝'
     },
     {
         id: 2,
-        heading: 'But who said they are for special days?🤔',
+        heading: 'Not just for Birthdays',
         sub: 'I think Cards are for everyday....'
     },
     {
         id: 3,
-        heading: 'So why not send them something....',
+        heading: 'Say Something Today....',
         sub: 'A reminder, apology, appreciation, birthday note, date invitation'
     },
     {
         id: 4,
-        heading: 'Wanna try? Reach out to someone special.',
+        heading: 'Ready to try',
         sub: 'Well then.... start here 😁',
         isCta: true
     }
 ]
 
-function Panel({panel, onReveal, isActive, index, total}) {
+function Panel({panel, onReveal, isActive, index, total, onNext}) {
     return (
         <div className={`land-panel ${isActive ? 'land-panel--active' : ''}`}>
             <h1 className="home-text">
@@ -224,7 +224,10 @@ function Panel({panel, onReveal, isActive, index, total}) {
             </h1>
             <p className="home-sub">{panel.sub}</p>
             {!panel.isCta && (
-               <span style={{ fontSize: '1rem', opacity: 0.6 }}>scroll → </span>
+               <button className="scroll-next_btn"
+               onClick={onNext}
+               style={{ fontSize: '1rem', opacity: 0.6, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+               > Scroll → </button>
             )}
             {panel.isCta && (
         <button className="cta-button" onClick={onReveal}>
@@ -249,7 +252,8 @@ function Card({card}) {
 }
 
 export default function Home() {
-    const [showCards, setShowCards] = useState(false)
+    const [ready, setReady] = useState(false)
+    const [showGallery, setShowGallery] = useState(false)
     const [cards, setCards] = useState([])
     const [loading, setLoading] = useState(true)
     const [activePanel, setActivePanel] = useState(0)
@@ -278,7 +282,7 @@ export default function Home() {
     }, [])
 
     function handleReveal() {
-        setShowCards(true)
+        setReady(true)
         setTimeout(() => {
             document.getElementById('cards-grid')?.scrollIntoView({
                 behavior: 'smooth'
@@ -286,11 +290,18 @@ export default function Home() {
         }, 100)
     }
 
+    function scrollToPanel(index) {
+        const el = landRef.current
+        if (!el) return
+        el.scrollTo({left: index * el.offsetWidth, behavior: 'smooth'})
+    }
+
     return (
         <div className="home-wrapper">
             <section  ref={landRef} className="land-cont">
                 {PANELS.map((panel, i) => (
                     <Panel key={panel.id} panel={panel} onReveal={handleReveal}
+                    onNext={() => scrollToPanel(i + 1)} 
                     isActive={activePanel === i} index={i} total={PANELS.length}
                     />
                 ))}
@@ -303,24 +314,36 @@ export default function Home() {
 
                 </div>
 
-            {showCards && (
-                <section id="cards-grid" className="cards-section cards-section--reveal">
-                    <div className="home-grid">
-                        {loading && <p className="home-sub">Loading cards…</p>}
-                        {!loading && cards.length === 0 && (
-                            <p className="home-sub">No cards yet — be the first to create one ✨</p>
-                        )}
-                        {cards.map((card) => (
-                            <Card key={card.id} card={card}/>
-                        ))}
+           {ready && (
+    <section id="cards-grid" className="cards-section cards-section--reveal">
+        <Link to="/create" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="cta-button">Create your card</button>
+        </Link>
 
-                    </div>
-                    <Link to={`/create`} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                    <button className="cta-button" style={{display: "flex", alignItems: 'center'}}>Create your card</button>
-                    </Link>
-                </section>
+        {!showGallery && (
+            <button
+                className="cta-button cta-button--ghost"
+                style={{ marginTop: '1rem' }}
+                onClick={() => setShowGallery(true)}
+            >
+                See examples
+            </button>
+        )}
 
-            )}
+        {showGallery && (
+            <div className="home-grid" style={{ marginTop: '2rem' }}>
+                {loading && <p className="home-sub">Loading cards…</p>}
+                {!loading && cards.length === 0 && (
+                    <p className="home-sub">No cards yet — be the first to create one ✨</p>
+                )}
+                {cards.map((card) => (
+                    <Card key={card.id} card={card}/>
+                ))}
+            </div>
+        )}
+    </section>
+)}
+
 
         </div>
     )

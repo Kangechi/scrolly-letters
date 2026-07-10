@@ -16,7 +16,11 @@ export default function HeroScene({data, emoji}) {
             <motion.span className="scene-emoji" style={{ y: emojiY }}>
                 {emoji}
             </motion.span>
-            <h1 className="scene-headline">{data.headline}</h1>
+            <h1 className="scene-headline stacked">
+                {data.headline.split(' ').map((word, i) => (
+                    <span className='stack-word' key={i}>{word}</span>
+                ))}
+            </h1>
             <p className="scene-sub">{data.sub}</p>
         </div>
     )

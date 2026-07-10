@@ -98,9 +98,13 @@ export default function Outro({ data, isPreview }) {
 
   return (
     <div className="scene-card">
-      <h2 className="scene-label">{data.sub}</h2>
-      <h5 className="scene-label">{data.text}</h5>
-      <p className="scene-text">{data.line}</p>
+      <span className="scene-label">{data.sub}</span>
+      <span className="scene-label">{data.text}</span>
+      <h1 className="scene-headline stacked">
+        {data.line.split(' ').map((word, i) => (
+          <span className="stack-word" key={i}>{word}</span>
+        ))}
+      </h1>
 
       {!isPreview && (
         <button className="cta-button" onClick={() => setPaymentStep('phone')}>
