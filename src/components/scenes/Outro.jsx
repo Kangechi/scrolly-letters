@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 export default function Outro({ data, isPreview }) {
   // One variable drives the whole modal: idle → phone → waiting → paid (or failed)
   const [paymentStep, setPaymentStep] = useState('idle')
+  const [alreadyPaid, setAlreadyPaid] = useState(false)
   const [phone, setPhone] = useState('')
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -12,7 +13,10 @@ export default function Outro({ data, isPreview }) {
   const cardId = window.location.pathname.split('/').pop()
 
   // ── 1. ALREADY-PAID CHECK ──────────────────────────────────
-  // If this card was paid for already, skip straight to share options.
+  // Just remembers the fact — does NOT open the modal. Every scene
+  // mounts immediately on page load (scroll-reveal only fades them
+  // visually), so touching paymentStep here would pop the modal open
+  // before the reader has scrolled anywhere near the end.
   useEffect(() => {
     if (isPreview) return
     supabase
@@ -21,7 +25,7 @@ export default function Outro({ data, isPreview }) {
       .eq('id', cardId)
       .single()
       .then(({ data: card }) => {
-        if (card?.paid) setPaymentStep('paid')
+        if (card?.paid) setAlreadyPaid(true)
       })
   }, [isPreview, cardId])
 
@@ -107,7 +111,7 @@ export default function Outro({ data, isPreview }) {
       </h1>
 
       {!isPreview && (
-        <button className="cta-button" onClick={() => setPaymentStep('phone')}>
+        <button className="cta-button" onClick={() => setPaymentStep(alreadyPaid ? 'paid' : 'phone')}>
           Share this card ✨
         </button>
       )}
