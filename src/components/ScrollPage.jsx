@@ -7,6 +7,7 @@ import Message from './scenes/Message'
 import Outro from './scenes/Outro'
 import MemoryScene from "./scenes/MemoryScene";
 import WhoScene from "./scenes/WhoScene";
+import FeedbackScene from "./scenes/FeedbackScene";
 
 
 export const SCENE_MAP = {
@@ -15,6 +16,7 @@ export const SCENE_MAP = {
     message: Message,
     memory: MemoryScene,
     closing: Outro,
+    feedback: FeedbackScene,
 }
 
 function Scene({section, emoji}) {

@@ -133,6 +133,22 @@ Each recipient gets their own color personality
   --bg: #5fafce;
   --card-bg: #1A2730;
 }
+
+/* ── EVENT BRANDS ───────────────────────────────────────────── */
+/* Mctaba — AI & Automation Workshop (RECAP). Navy + orange. */
+.theme-mctaba {
+  --accent: #F97316;
+  --accent-2: #FB923C;
+  --bg: #0A1B2E;
+  --card-bg: #12314F;
+}
+/* LinkedIn Local Nairobi — Unwritten Rules of Business (INVITE). Navy + gold. */
+.theme-linkedlocal {
+  --accent: #E9B824;
+  --accent-2: #4C86C6;
+  --bg: #071C3A;
+  --card-bg: #0A3A6B;
+}
 .card-wrapper {
   position: relative;
   overflow: hidden;
@@ -296,6 +312,31 @@ Each recipient gets their own color personality
   color: var(--accent);
   margin-top: 0.75rem;
 }
+
+/* Anchor tags styled as buttons (feedback CTA links) */
+a.cta-button {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* ── Feedback rating stars ─────────────────────────────────── */
+.rating-row {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.5rem 0 1.25rem;
+}
+.rating-star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  color: #475569;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.rating-star:hover { transform: scale(1.15); }
+.rating-star--on { color: var(--accent); }
 /* Floating animation */
 
 @keyframes float {

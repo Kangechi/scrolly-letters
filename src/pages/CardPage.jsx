@@ -4,6 +4,7 @@ import AmbientBackground from "../components/AmbientBackground"
 import { useState, useEffect } from "react"
 import confetti from 'canvas-confetti'
 import { supabase } from '../lib/supabase'
+import { cardData } from '../data/cards_data'
 
 
 function getBirthdayState(birthdayStr){
@@ -21,11 +22,12 @@ function getBirthdayState(birthdayStr){
 }
 
 function Countdown({ card }) {
-    const [status, setStatus] = useState(() => getBirthdayState(card.birthday))
-    
+    const eventDate = card.eventDate || card.birthday
+    const [status, setStatus] = useState(() => getBirthdayState(eventDate))
+
     useEffect(() => {
         if (status.state !== 'future') return
-        const timer = setInterval(() => setStatus(getBirthdayState(card.birthday)), 1000)
+        const timer = setInterval(() => setStatus(getBirthdayState(eventDate)), 1000)
         return () => clearInterval(timer)
     }, [status.state])
 
@@ -74,6 +76,14 @@ export default function CardPage() {
         setLoading(true)
         setCard(null)
 
+        // Event letters live in the bundle, not the DB — look locally first.
+        const localEvent = cardData.find(c => c.id === id && c.kind === 'event')
+        if (localEvent) {
+            setCard(localEvent)
+            setLoading(false)
+            return
+        }
+
         supabase
             .from('cards')
             .select('*')
@@ -98,7 +108,9 @@ export default function CardPage() {
     bubbly: ['#d99201', '#905A01', '#58761B', '#1A3F22'],
     burnt: ['#B28565', '#908786', '#635D5C', '#373231'],
     bold: ['#1A2730', '#45586c', '#f09475', "#6bafda"],
-    electric: ['#0090A3', '#87f1ff', '#5fafce', '#1A2730']
+    electric: ['#0090A3', '#87f1ff', '#5fafce', '#1A2730'],
+    mctaba: ['#F97316', '#FB923C', '#12314F', '#fff'],
+    linkedlocal: ['#E9B824', '#4C86C6', '#0A3A6B', '#fff']
 
   }
 
@@ -119,18 +131,25 @@ export default function CardPage() {
     if (!card) return <div className="landing"><p className="landing-sub">Card not Found 🫤</p></div>
 
     if (!revealed) {
+        const isEvent = card.kind === 'event'
         return(
              <div className={`landing theme-${card.theme}`}>
         <AmbientBackground emoji={card.emoji} />
         <div className="landing-inner">
           <span className="landing-emoji">{card.emoji}</span>
-          <h2 className="landing-title">Someone sent you<br/>something special</h2>
-          <p className="landing-sub">A message made just for you</p>
+          <h2 className="landing-title">
+            {isEvent
+              ? (card.landingTitle || 'You’re invited')
+              : <>Someone sent you<br/>something special</>}
+          </h2>
+          <p className="landing-sub">
+            {isEvent ? (card.landingSub || '') : 'A message made just for you'}
+          </p>
           {
-            card.birthday && <Countdown card={card}/>
+            (card.eventDate || card.birthday) && <Countdown card={card}/>
           }
           <button className="read-me-btn" onClick={handleRevealed}>
-            Read Me ✨
+            {isEvent ? (card.ctaLabel || 'Open ✨') : 'Read Me ✨'}
           </button>
         </div>
       </div>
