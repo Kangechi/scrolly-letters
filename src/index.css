@@ -11,12 +11,18 @@ So this fisrt part - The style is the rule for the webpage
 html {
   scroll-behavior: smooth;
 }
-body {
-  font-family: 'Segoe UI', system-ui, sans-serif ;
-  background: linear-gradient(130, var(--accent), var(--accent)) ;
-  color: #000000;
-  overflow-x: hidden;
+:root {
+  /* Type system — grotesk = structure/impact, serif = emotional voice, inter = UI/body */
+  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
 
+body {
+  font-family: var(--font-body);
+  background: #0b1020;
+  color: #e2e8f0;
+  overflow-x: hidden;
 }
 
 /* 
@@ -152,17 +158,40 @@ Each recipient gets their own color personality
 .card-wrapper {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(120deg, var(--bg), var(--card-bg), var(--bg), var(--accent), var(--accent-2));
-  background-size: 300% 300%;
-  animation: gradient-drift 18s ease-in-out infinite;
   min-height: 100vh;
+  /* Aurora mesh: brighter color pools drifting over an accent-tinted base */
+  background:
+    radial-gradient(48% 42% at 15% 18%, color-mix(in srgb, var(--accent) 62%, transparent), transparent 64%),
+    radial-gradient(48% 42% at 85% 25%, color-mix(in srgb, var(--accent-2) 58%, transparent), transparent 66%),
+    radial-gradient(55% 50% at 50% 96%, color-mix(in srgb, var(--accent) 48%, transparent), transparent 70%),
+    linear-gradient(150deg, var(--bg), color-mix(in srgb, var(--card-bg) 65%, var(--accent) 18%));
+  background-size: 200% 200%, 220% 220%, 200% 200%, 100% 100%;
+  animation: aurora-drift 20s ease-in-out infinite;
+}
+
+/* Film grain — sits above the mesh, below the content. ::after is the watermark, so grain uses ::before. */
+.card-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes aurora-drift {
+  0%, 100% { background-position: 0% 50%, 100% 50%, 50% 0%, 0 0; }
+  50%      { background-position: 100% 50%, 0% 50%, 50% 100%, 0 0; }
 }
 
 .lines .line {
   display: block;
-  font-size: clamp(1.3rem, 3.5vw, 2rem);
-  font-weight: 600;
-  line-height: 1.6;
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 3.5vw, 2.05rem);
+  font-weight: 500;
+  line-height: 1.55;
   color: #f4f0ea;
   opacity: 0;
   transform: translateY(30px);
@@ -184,13 +213,17 @@ Each recipient gets their own color personality
   position: relative;
   z-index: 1;
   background: var(--card-bg);
-  border: 1px solid var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 
+  inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent),
+  0 24px 60px -24px rgba(0, 0, 0, 0.8),
+  0 0 60px -10px color-mix(in srgb, var(--accent) 22% , transparent)
+  ;
   border-radius: 24px;
   padding: 3rem 2.5rem;
   max-width: 600px;
   width: 100%;
   text-align: center;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .scene-emoji {
@@ -217,9 +250,10 @@ Each recipient gets their own color personality
 .stacked { line-height: 0.95; margin-bottom: 0.5rem; }
 .stacked .stack-word {
   display: block;
+  font-family: var(--font-display);
   font-size: clamp(2.6rem, 10vw, 5rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -246,8 +280,10 @@ Each recipient gets their own color personality
 }
 
 .scene-headline {
+  font-family: var(--font-display);
   font-size: clamp(2rem, 6vw, 3.5rem);
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -260,23 +296,27 @@ Each recipient gets their own color personality
 
 
 .scene-sub {
-  font-size: 1.1rem;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
   color: #94a3b8;
   line-height: 1.7;
 
 }
 .scene-text {
-  font-size: 1.2rem;
-  line-height: 1.9;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  line-height: 1.85;
   color: #e2e8f0;
-  font-style: itaic;
+  font-style: italic;
 
 }
 
 .scene-label {
-  font-size: 0.85rem;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.15rem;
+  letter-spacing: 0.18rem;
+  font-weight: 500;
   color: var(--accent);
   margin-bottom: 1rem;
   display: block;
@@ -293,8 +333,10 @@ Each recipient gets their own color personality
   border: none;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #000;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1rem;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -356,46 +398,84 @@ a.cta-button {
 ================================ */
 
 .ambient-bg {
-  position: absolute;
+  position: fixed;      /* pinned to the viewport so --mx/--my (viewport coords) map correctly and it stays a living backdrop while scenes scroll over it */
   inset: 0;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
 }
 
-.glow-orb {
+/* ── Finger-follow glow — the "responds to me" spotlight (--mx/--my) ── */
+.cursor-glow {
+  position: absolute;
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
+  width: 55vmax;
+  height: 55vmax;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--accent) 34%, transparent),
+    color-mix(in srgb, var(--accent-2) 18%, transparent) 35%,
+    transparent 62%);
+}
+
+/* ── Light particles — motes that parallax with pointer/tilt (--par-*) ── */
+.particle-field {
+  position: absolute;
+  inset: 0;
+  transform: translate(calc(var(--par-x, 0) * 26px), calc(var(--par-y, 0) * 26px));
+}
+.particle {
   position: absolute;
   border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.35;
+  background: color-mix(in srgb, var(--accent-2) 70%, #fff);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent-2) 70%, transparent);
+  opacity: 0.55;
+  /* parallax (transform) and float (translate) are SEPARATE properties, so they compose */
+  transform: translate(
+    calc(var(--par-x, 0) * var(--depth, 0.5) * 46px),
+    calc(var(--par-y, 0) * var(--depth, 0.5) * 46px)
+  );
+  animation-name: mote-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes mote-float {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -20px; }
 }
 
-.glow-orb--one {
-  width: 22rem;
-  height: 22rem;
-  top: -6rem;
-  left: -6rem;
-  background: var(--accent);
-  animation: orb-drift-a 22s ease-in-out infinite;
+/* ── Scroll-bloom — the letter warms from the bottom as you descend (--scroll) ── */
+.bloom {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(120% 85% at 50% 100%,
+    color-mix(in srgb, var(--accent) 45%, transparent), transparent 60%);
+  opacity: calc(var(--scroll, 0) * 0.6);
+  transition: opacity 0.25s ease;
 }
 
-.glow-orb--two {
-  width: 18rem;
-  height: 18rem;
-  bottom: -5rem;
-  right: -4rem;
-  background: var(--accent-2);
-  animation: orb-drift-b 26s ease-in-out infinite;
+/* ── Bottom-edge lure — pulls the eye down, fades near the end (--scroll) ── */
+.scroll-lure {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 15vh;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--accent) 28%, transparent), transparent);
+  animation: lure-pulse 2.6s ease-in-out infinite;
 }
-
-@keyframes orb-drift-a {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(6rem, 4rem) scale(1.15); }
-}
-
-@keyframes orb-drift-b {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-5rem, -3rem) scale(1.1); }
+@keyframes lure-pulse {
+  0%, 100% { opacity: calc((1 - var(--scroll, 0)) * 0.5); transform: translateY(0); }
+  50%      { opacity: calc((1 - var(--scroll, 0)) * 0.85); transform: translateY(-5px); }
 }
 
 .ambient-emoji {
@@ -439,17 +519,34 @@ a.cta-button {
   position: relative;
   overflow: hidden;
   min-height: 100vh;
-  background: linear-gradient(120deg, var(--bg), var(--card-bg), var(--bg));
-  background-size: 200% 200%;
-  animation: gradient-drift 16s ease-in-out infinite;
+  /* Same aurora mesh as the scroll experience, so the first impression matches */
+  background:
+    radial-gradient(60% 55% at 20% 20%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 70%),
+    radial-gradient(55% 50% at 80% 30%, color-mix(in srgb, var(--accent-2) 36%, transparent), transparent 72%),
+    linear-gradient(150deg, var(--bg), var(--card-bg));
+  background-size: 200% 200%, 220% 220%, 100% 100%;
+  animation: aurora-drift 20s ease-in-out infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
 }
 
+.landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 .landing-inner {
   position: relative;
+  max-width: min(92vw, 30rem);
+  width: 100%;
   z-index: 1;
   text-align: center;
   display: flex;
@@ -464,8 +561,12 @@ a.cta-button {
 }
 
 .landing-title {
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  font-family: var(--font-display);
   font-size: clamp(1.6rem, 5vw, 2.5rem);
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -474,6 +575,8 @@ a.cta-button {
 }
 
 .landing-sub {
+  overflow-wrap: break-word;
+  text-wrap: balance;
   font-size: 1rem;
   color: #94a3b8;
 }
@@ -544,6 +647,7 @@ a.cta-button {
   border: none;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #fff;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.1rem;
   cursor: pointer;
@@ -558,18 +662,10 @@ a.cta-button {
 .home-wrapper {
   min-height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg,
-  #DB3E8C,
-  #EF0107,
-  #f59e0b, /* warm    */
-  #d99201, /* bubbly  */
-  #5c3c00, /* exec    */
-  #34d399, /* mint    */
-  #0090A3, /* electric */
-  #7096d1, /* blue    */
+  background: linear-gradient(135deg, /* blue    */
   #c084fc, /* hue     */
-  #f09475, /* bold    */
-  #B28565  /* burnt   */
+  #1d003f, /* bold    */
+  #2207cf  /* burnt   */
   );
   background-size: 500% 500%;
   padding: 3rem 2rem;
@@ -903,3 +999,10 @@ to { opacity: 1; transform: translateY(0);}
   margin: 1.25rem auto;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+  .landing {padding: 1.25rem;}
+  .countdown {gap: 0.9rem;}
+  .countdown-num {font-size: 1.9rem;}
+  .scene-card {padding: 2rem 1.4rem;}
+}
