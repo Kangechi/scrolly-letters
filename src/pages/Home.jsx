@@ -1,350 +1,277 @@
-/* import { useState } from "react"
-import { cardData } from "../data/cards_data"
-import { Navigate, useParams } from "react-router-dom"
+import { useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import AmbientBackground from '../components/AmbientBackground'
 
-const [seeCard, setSeeCard] = useState(false)
+/* ============================================================
+   HOME — the scrolly landing (Goal 2)
+   Old horizontal-scroll version preserved in Home.horizontal.backup.txt
+   Journey: Hero → How it works → Showcase → Occasions & Events → Pricing → CTA
+   ============================================================ */
 
-function seeCard(){
-    setSeeCard(true)
-    const {id} = useParams()
-    const card = cardData.find(c => c.id === id)
-    const navigate = Navigate()
+function Hero() {
+  const ref = useRef(null)
 
-    if (setSeeCard) navigate={'/card/:id'}
+  // Track how far THIS section has scrolled through the viewport.
+  // 'start start' → 'end start' = from "top of hero hits top of screen"
+  // to "bottom of hero leaves the top". That range drives the parallax.
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start start', 'end start'],
+  })
 
-}
-function Card({emoji, recipient}) {
-    {cardData.map(() => {
-        return(
-            <div className="scene-card">
-                <h1 className="scene-sub">Preview this card</h1>
-                <div className="scene-wrapper">
-                    <div className="scene-emoji">{emoji}</div>
-                </div>
-                <div className="scene-wrapper">
-                    <div className="scene-text">
-                        {recipient}
-                    </div>
-                </div>
-                <button className="cta-button" onClick={seeCard}> View Card</button>
+  // As you scroll down, the whole hero drifts UP faster than the page
+  // (parallax) and fades — so the next section slides in over it.
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, -140])
+  const fade     = useTransform(scrollYProgress, [0, 0.75], [1, 0])
 
-            </div>
-        )
-    })}
-}
-
-export default function Home({card}) {
-    return(
-        <div className="scene-card">
-            <Card emoji={emoji} recipient={recipient}/>            
+  return (
+    <section ref={ref} className="sl-hero">
+      <motion.div className="sl-hero-inner" style={{ y: contentY, opacity: fade }}>
+        <span className="sl-hero-kicker">Everyday  gift cards, with a digital twist</span>
+        <h1 className="sl-hero-title">Scrolly&nbsp;Letters</h1>
+        <p className="sl-hero-sub">
+          Say something today through a little card that unfolds, scene by scene,
+          as they scroll.
+        </p>
+        <div className="sl-hero-cta">
+          <Link to="/create" className="cta-button">Create a card →</Link>
+          <a href="#how" className="cta-button cta-button--ghost">See how it works</a>
         </div>
-    )
-} 
-    
-This code was wrong, and I messed up on very many issues that I've learned. One of the key areas that was wrong: I didn't need to use state or use params. I could easily route using link imported from React router dom.
+      </motion.div>
 
-Then looping, I did the wrong looping as well. I didn't loop the way it was supposed to.
-
-I've also learned that hooks can only be used in components, not in functions, and components are the ones that you actually export. 
-*/
-
-
-
-
- /* const WORDS = [
-        {
-            id: 1, heading: 'Welcome to Everday Gift Cards',
-            id: 2, sub_head: 'Though this letters have a scrolly groove',
-            id:3, sub: 'These are scrolly letters',
-            id:4, mess_2: 'Who said cards are only for special occasions? Cards are for everyday you want to tell someone something special or ordinary.',
-            id:5, mess_1: 'Is it a birthday, an anniversary, a bad day, an encouragement or even an apology',
-            id:6, cta: 'Want to make you on scrolly letter, get Started!'
-
-        }
-    ] 
-    
-    This is the wrong approach - I needed to create the structure closer to the data_structure I did..... for cards_data
-
-    The question to ask was, "What is this section displaying?" 
-    So everything being displayed has to land on home because that is what is being exported to app.jsx. 
-    So the landing panel will just be a child component, but it won't render what you want, the same two cards.
-     That is why you need the two components, and you won't transfer any of the parts that should be rendered to any
-      other place than the parent component. 
-    */
-
-
-
-
-   /*  const WORDS = [
-        { id: 1, type: 'heading', text: 'Everyday Gift Cards' },
-        { id: 2, type: 'sub',     text: 'These are scrolly letters — for every moment worth saying something' },
-        { id: 3, type: 'message', text: 'Who said cards are only for special occasions? Cards are for every day you want to tell someone something special.' },
-        { id: 4, type: 'message', text: 'A birthday, an anniversary, a bad day, an encouragement — or even an apology.' },
-        { id: 5, type: 'cta',     text: 'Want to make your own scrolly letter?' },
-    ]
-
-    function LandingPanel({item}) {
-        return (
-            <div className="land-panel">
-                {item.type === 'heading' && (
-                    <h1 className="scene-headline">{item.text}</h1>
-                )}
-                {item.type === 'sub' && (
-                    <p className="scene-sub">{item.text}</p>
-                )}
-                {item.type === 'message' && (
-                    <p className="scene-text">{item.text}</p>
-                )}
-                {item.type === 'cta' && (
-                    <div>
-                        <p className="scene-text">{item.text}</p>
-                        <Link to="/create">
-                        <button className="cta-button"> Get Statred → </button>
-                        </Link>
-                    </div>
-                )}
-            </div>
-        )
-    }
-
-
-
-
-//Card is purely a component
-function Card({card}) {
-    const [hero, setHero] = useState(false)
-    return (
-
-        <div className="scene-card">
-            <span className="scene-emoji">{card.emoji}</span>
-            <p className="home-text">{card.recipient}</p>
-            <Link to={`/card/${card.id}`}>
-            <button className="cta-btton"> View Card</button>
-            </Link>
-        </div>
-    )
-
+      <a href="#how" className="sl-scroll-cue" aria-label="Scroll down to learn more">
+        <span>scroll</span>
+        <span className="sl-scroll-cue-arrow">⌄</span>
+      </a>
+    </section>
+  )
 }
 
-// It's in the Home function, which we export, that now maps over the card. We have a template: the card, the container. It has the emoji, the recipient; it has everything that we need. Then we loop over in the final section. 
-
-export default function Home({}) {
-
-    return (
-       
-        <div className="home-wrapper">
-            <section className="land-cont">
-                {WORDS.map((item) => (
-                    <LandingPanel key={item.id} item={item}/>
-                      ))}
-                      </section>
-
-                      <section className="card-section">
-                        <h2 className="scene-sub" style={{textAlign: 'center', marginBottom: '2rem'}}>
-                            Browse Cards
-                        </h2>
-                        <div className="home-grid">
-                            {cardData.map((card) => (
-                                <Card key={card.id} card={card}/>
-                            ))}
-                        </div>
-
-                      </section>
-        </div>
-        
-    )
-
-
-
-}
-    
-So once again, I commented everything out and started all over. This is because it was not giving me the type of platform I wanted. It's a state thing. Once the horizontal scroll is done, we move to the next state, which now shows the card rather than it being different sections, because that ruins the whole user experience. 
-With this new design, everything works out the way the user should map in. 
-
-*/
-
-
-import { useState, useEffect, useRef } from "react"
-import { Link } from "react-router-dom"
-import { supabase } from "../lib/supabase"
-
-/* const PANELS = [
-    {
-        id: 1,
-        heading: 'Welcome to Everday Gift Cards',
-        sub: 'Cards for each day... not just birthdays'
-    },
-    {
-        id: 2,
-        heading: 'These cards are Scrolly letters',
-        sub: 'What\'s that anyway? It\'s a card that tell a story by scroll'
-    },
-    {
-        id: 3,
-        heading: 'Every moment and each day matters',
-        sub: 'A bad day. An encouragement. A thank you note. Congratulations - even an apology.'
-    },
-    {
-        id: 4,
-        heading: 'Are you Ready',
-        sub: 'Check out the cards below, create your own and send the person you love something they won\'t forget',
-        isCta: true
-    },
-] */
-
-const PANELS = [
-    {
-        id: 1,
-        heading: 'Everday Gift Cards',
-        sub: 'Perhaps the most convinent gift that we give to our loved ones 🥰💝'
-    },
-    {
-        id: 2,
-        heading: 'Not just for Birthdays',
-        sub: 'I think Cards are for everyday....'
-    },
-    {
-        id: 3,
-        heading: 'Say Something Today....',
-        sub: 'A reminder, apology, appreciation, birthday note, date invitation'
-    },
-    {
-        id: 4,
-        heading: 'Ready to try',
-        sub: 'Well then.... start here 😁',
-        isCta: true
-    }
+/* ── SHOWCASE ────────────────────────────────────────────────
+   Curated DUMMY occasions — never real users' letters. Teasers are
+   generic on purpose: no personal info is ever shown here. ── */
+const SHOWCASE = [
+  { id: 'birthday',      emoji: '🎂', occasion: 'Birthday',      badge: 'Most loved', teaser: 'A birthday that unfolds one memory at a time.',        scenes: 4, read: '45s read', color: '#c084fc' },
+  { id: 'anniversary',   emoji: '💞', occasion: 'Anniversary',   badge: 'Romantic',   teaser: 'Your story, scene by scene, back to the day you met.',   scenes: 5, read: '60s read', color: '#f472b6' },
+  { id: 'thankyou',      emoji: '🙏', occasion: 'Thank you',     badge: 'Heartfelt',  teaser: 'Say it properly — a thank-you they can revisit.',        scenes: 3, read: '30s read', color: '#34d399' },
+  { id: 'apology',       emoji: '🕊️', occasion: 'Apology',       badge: 'Brave',      teaser: 'The words that are hard to say, given room to land.',     scenes: 3, read: '35s read', color: '#7096d1' },
+  { id: 'encouragement', emoji: '☀️', occasion: 'Encouragement', badge: 'Uplifting',  teaser: 'A little sunshine for someone having a hard week.',       scenes: 3, read: '30s read', color: '#f59e0b' },
+  { id: 'justbecause',   emoji: '🌸', occasion: 'Just because',  badge: 'Everyday',   teaser: 'No occasion needed — just because you thought of them.',  scenes: 3, read: '30s read', color: '#DB3E8C' },
 ]
 
-function Panel({panel, onReveal, isActive, index, total, onNext}) {
-    return (
-        <div className={`land-panel ${isActive ? 'land-panel--active' : ''}`}>
-            <h1 className="home-text">
-                {panel.heading}
-            </h1>
-            <p className="home-sub">{panel.sub}</p>
-            {!panel.isCta && (
-               <button className="scroll-next_btn"
-               onClick={onNext}
-               style={{ fontSize: '1rem', opacity: 0.6, background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
-               > Scroll → </button>
-            )}
-            {panel.isCta && (
-        <button className="cta-button" onClick={onReveal}>
-          I'm ready ✨
-        </button>
-      )}
-    </div>
-    )
+function OccasionCard({ item, index }) {
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start end', 'end start'],   // whole pass-through of the viewport
+  })
+
+  // Alternating depth → cards travel at different speeds = layered parallax.
+  const range = index % 2 === 0 ? 55 : 28
+  const y = useTransform(scrollYProgress, [0, 1], [range, -range])
+
+  return (
+    <motion.article
+      ref={ref}
+      className="occ-card"
+      style={{ y }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="occ-card-head" style={{ '--occ': item.color }}>
+        <span className="occ-badge">{item.badge}</span>
+        <span className="occ-emoji">{item.emoji}</span>
+      </div>
+      <div className="occ-card-body">
+        <h3 className="occ-title">{item.occasion}</h3>
+        <p className="occ-teaser">{item.teaser}</p>
+        <div className="occ-meta">
+          <span>🎬 {item.scenes} scenes</span>
+          <span>⏱ {item.read}</span>
+        </div>
+        <Link to="/create" className="occ-cta">Create this →</Link>
+      </div>
+    </motion.article>
+  )
 }
 
-function Card({card}) {
-    return (
-        <div className="scene-card">
-         <span className="scene-emoji">{card.emoji}</span>
-         <p className="scene-sub">{card.recipient}</p>
-         <Link to={`/card/${card.id}`}>
-         <button className="cta-button">View Card →</button>
-         </Link>
+function Showcase() {
+  return (
+    <section id="showcase" className="sl-section sl-showcase">
+      <span className="sl-section-kicker">See what you can make</span>
+      <h2 className="sl-section-title">A card for every kind of moment</h2>
+      <p className="sl-section-note">
+        Samples, not real letters, every card someone makes stays private to them.
+      </p>
+      <div className="occ-grid">
+        {SHOWCASE.map((item, i) => (
+          <OccasionCard key={item.id} item={item} index={i} />
+        ))}
+      </div>
+    </section>
+  )
+}
 
+/* Small helper: a section header that rises in as it enters view. */
+function Reveal({ children, className = '', delay = 0 }) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+/* ── HOW IT WORKS — a real 3-step sequence (numbering is meaningful here) ── */
+const STEPS = [
+  { n: '01', icon: '✍️', title: 'Write your letter', text: 'Pick an occasion and pour in your words, one scene at a time.' },
+  { n: '02', icon: '🎨', title: 'Choose a vibe',     text: 'Give it a theme and mood that fit the person and the moment.' },
+  { n: '03', icon: '🔗', title: ' Pay & Share the link',    text: 'Send one link but don\'t forget to pay. They scroll, and your letter unfolds like a little world.' },
+]
+
+function HowItWorks() {
+  return (
+    <section id="how" className="sl-section">
+      <Reveal>
+        <span className="sl-section-kicker">How it works</span>
+        <h2 className="sl-section-title">Three steps to a letter they’ll keep</h2>
+      </Reveal>
+      <div className="how-grid">
+        {STEPS.map((s, i) => (
+          <Reveal key={s.n} className="how-step" delay={i * 0.12}>
+            <span className="how-step-n">{s.n}</span>
+            <span className="how-step-icon">{s.icon}</span>
+            <h3 className="how-step-title">{s.title}</h3>
+            <p className="how-step-text">{s.text}</p>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ── OCCASIONS & EVENTS — two audiences: individuals vs organizations ── */
+function OccasionsEvents() {
+  return (
+    <section id="occasions" className="sl-section">
+      <Reveal>
+        <span className="sl-section-kicker">For you and for events</span>
+        <h2 className="sl-section-title">Not just for birthdays</h2>
+      </Reveal>
+      <div className="split-grid">
+        <Reveal className="split-panel">
+          <span className="split-emoji">💌</span>
+          <h3 className="split-title">Everyday you have something to say</h3>
+          <p className="split-text">
+            Apologies, thank-yous, encouragement, anniversaries, or just because
+            a little card for every moment worth saying something.
+          </p>
+          <Link to="/create" className="cta-button">Create a card →</Link>
+        </Reveal>
+        <Reveal className="split-panel split-panel--event" delay={0.12}>
+          <span className="split-emoji">🎉</span>
+          <h3 className="split-title">Events &amp; organizations</h3>
+          <p className="split-text">
+            Send beautiful invites and collect warm feedback from your guests 
+            scrolly letters, built for your event.
+          </p>
+          <Link to="/event" className="cta-button cta-button--ghost">Explore events →</Link>
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
+/* ── PRICING — Goal 5: KES 50 per card. Customized priced higher (TBD). ── */
+function Pricing() {
+  return (
+    <section id="pricing" className="sl-section">
+      <Reveal>
+        <span className="sl-section-kicker">Pricing</span>
+        <h2 className="sl-section-title">One flat price. No surprises. Unless your doing more </h2>
+      </Reveal>
+      <div className="price-grid">
+        <Reveal className="price-card">
+          <span className="price-tag">Standard</span>
+          <p className="price-amount">KES 50<span>/ card</span></p>
+          <ul className="price-list">
+            <li>A full scrolly letter</li>
+            <li>Any occasion &amp; theme</li>
+            <li>One shareable link</li>
+          </ul>
+          <Link to="/create" className="cta-button">Make one now →</Link>
+        </Reveal>
+        <Reveal className="price-card">
+          <span className="price-tag">For Events</span>
+          <p className="price-amount">KES 500 monthly <span>/ card</span></p>
+          <ul className="price-list">
+            <li>Integration to your platform</li>
+            <li>Invites, Tickets, Feedback</li>
+            <li>shareable to every attendee </li>
+          </ul>
+          <Link to="/create" className="cta-button">Make one now →</Link>
+        </Reveal>
+        <Reveal className="price-card price-card--premium" delay={0.12}>
+          <span className="price-tag">Customized</span>
+          <p className="price-amount">Coming soon</p>
+          <ul className="price-list">
+            <li>Premium backdrops &amp; scenes</li>
+            <li>Made-to-order touches</li>
+            <li>Priced a little higher</li>
+          </ul>
+          <Link to="/customize" className="cta-button cta-button--ghost">Peek at customize →</Link>
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
+/* ── FINAL CTA + FOOTER ── */
+function FinalCta() {
+  return (
+    <section id="start" className="sl-section sl-final">
+      <Reveal>
+        <span className="sl-section-kicker">Ready?</span>
+        <h2 className="sl-section-title sl-final-title">Make someone’s day today</h2>
+        <p className="sl-section-note">It takes a few minutes and costs KES 50.</p>
+        <div className="sl-hero-cta">
+          <Link to="/create" className="cta-button">Create your card →</Link>
+          <Link to="/customize" className="cta-button cta-button--ghost">Customize one</Link>
         </div>
-    )
+      </Reveal>
+      <footer className="sl-footer">
+        <span className="sl-footer-mark">Scrolly Letters</span>
+        <nav className="sl-footer-links">
+          <Link to="/create">Create</Link>
+          <Link to="/event">Events</Link>
+          <Link to="/customize">Customize</Link>
+        </nav>
+        <span className="sl-footer-fine">Cards for every day · Made with 💜</span>
+      </footer>
+    </section>
+  )
 }
 
 export default function Home() {
-    const [ready, setReady] = useState(false)
-    const [showGallery, setShowGallery] = useState(false)
-    const [cards, setCards] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [activePanel, setActivePanel] = useState(0)
-    const landRef = useRef(null)
+  return (
+    <div className="sl-landing">
+      {/* Reused interaction engine; repainted for light paper via CSS. */}
+      <AmbientBackground emoji="💌" />
 
-    useEffect(() => {
-        supabase
-            .from('cards')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .then(({ data, error }) => {
-                if (!error) setCards(data)
-                setLoading(false)
-            })
-    }, [])
-
-    useEffect(() => {
-        const el = landRef.current
-        if (!el) return
-        function handleScroll() {
-            const index = Math.round(el.scrollLeft / el.offsetWidth)
-            setActivePanel(index)
-        }
-        el.addEventListener('scroll', handleScroll, {passive: true})
-        return () => el.removeEventListener('scroll', handleScroll)
-    }, [])
-
-    function handleReveal() {
-        setReady(true)
-        setTimeout(() => {
-            document.getElementById('cards-grid')?.scrollIntoView({
-                behavior: 'smooth'
-            })
-        }, 100)
-    }
-
-    function scrollToPanel(index) {
-        const el = landRef.current
-        if (!el) return
-        el.scrollTo({left: index * el.offsetWidth, behavior: 'smooth'})
-    }
-
-    return (
-        <div className="home-wrapper">
-            <section  ref={landRef} className="land-cont">
-                {PANELS.map((panel, i) => (
-                    <Panel key={panel.id} panel={panel} onReveal={handleReveal}
-                    onNext={() => scrollToPanel(i + 1)} 
-                    isActive={activePanel === i} index={i} total={PANELS.length}
-                    />
-                ))}
-            </section>
-             <div className="panel-dots">
-                    {PANELS.map((_, i) => (
-                        <span
-                        key={i} className={`panel-dot ${activePanel === i ? 'panel-dot--active' : ''}`}/>
-                    ))}
-
-                </div>
-
-           {ready && (
-    <section id="cards-grid" className="cards-section cards-section--reveal">
-        <Link to="/create" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <button className="cta-button">Create your card</button>
-        </Link>
-
-        {!showGallery && (
-            <button
-                className="cta-button cta-button--ghost"
-                style={{ marginTop: '1rem' }}
-                onClick={() => setShowGallery(true)}
-            >
-                See examples
-            </button>
-        )}
-
-        {showGallery && (
-            <div className="home-grid" style={{ marginTop: '2rem' }}>
-                {loading && <p className="home-sub">Loading cards…</p>}
-                {!loading && cards.length === 0 && (
-                    <p className="home-sub">No cards yet — be the first to create one ✨</p>
-                )}
-                {cards.map((card) => (
-                    <Card key={card.id} card={card}/>
-                ))}
-            </div>
-        )}
-    </section>
-)}
-
-
-        </div>
-    )
+      <Hero />
+      <HowItWorks />
+      <Showcase />
+      <OccasionsEvents />
+      <Pricing />
+      <FinalCta />
+    </div>
+  )
 }

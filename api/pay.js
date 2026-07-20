@@ -36,7 +36,7 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 email:  `${cardId}@scrolly-letters.app`, 
-                amount: 2000,
+                amount: 5000,
                 currency: 'KES',
                 mobile_money: {
                     phone: formatPhone(phone),
