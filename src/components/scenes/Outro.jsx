@@ -154,7 +154,7 @@ export default function Outro({ data, isPreview }) {
               <>
                 <p className="scene-label">Share this card</p>
                 <p className="scene-sub" style={{ marginBottom: '1rem' }}>
-                  A one-time fee of KES 20 unlocks sharing
+                  A one-time fee of KES 50 unlocks sharing
                 </p>
                 <input
                   className="create-input"
@@ -165,7 +165,7 @@ export default function Outro({ data, isPreview }) {
                 />
                 {error && <p style={{ color: '#f87171', fontSize: '0.85rem' }}>{error}</p>}
                 <button className="cta-button" onClick={handlePay}>
-                  Pay KES 20 via M-Pesa
+                  Pay KES 50 via M-Pesa
                 </button>
               </>
             )}
