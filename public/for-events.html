@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scrolly Letters — Event Letters</title>
+  <meta name="description" content="Turn an event invite or recap into a short, cinematic scroll people actually finish — sent by your own members, branded to your platform." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Rich link preview for WhatsApp / LinkedIn / email -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Scrolly Letters — Event Letters" />
+  <meta property="og:description" content="Most event emails get skipped. This one gets scrolled to the end. See how it fits your platform — then scroll into a live invite." />
+  <meta property="og:site_name" content="Scrolly Letters" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Scrolly Letters — Event Letters" />
+  <meta name="twitter:description" content="An event invite people actually finish — sent by your members, branded to your platform." />
+
+  <style>
+  :root{
+    --bg:#0E2A3F; --bg-2:#0b2233; --bg-3:#0a1a28;
+    --card-bg:#12324a; --panel:#13324a;
+    --ink:#eef4fb; --muted:rgba(238,244,251,.58); --faint:rgba(238,244,251,.34);
+    --accent:#F4D08F; --accent-2:#EDE3DD; --bronze:#BF8843;
+    --line:rgba(244,208,143,.16); --line-2:rgba(238,244,251,.09);
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,'Times New Roman',serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --maxw:720px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;}}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 70% 55% at 15% 8%, rgba(244,208,143,.10), transparent 60%),
+      radial-gradient(ellipse 55% 45% at 88% 92%, rgba(191,136,67,.13), transparent 55%),
+      linear-gradient(165deg,#0b2233,#0E2A3F 42%,#0a1420 100%);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── shared layout ── */
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 1.4rem;}
+  .eyebrow{
+    font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent); font-weight:700; margin:0 0 1rem;
+  }
+
+  /* ── scroll-marker rail ── */
+  .rail{
+    position:fixed; top:50%; left:1.5rem; transform:translateY(-50%);
+    z-index:40; display:flex; flex-direction:column; gap:.9rem;
+  }
+  .rail a{
+    display:flex; align-items:center; gap:.7rem; text-decoration:none;
+    color:var(--faint); font-size:.72rem; letter-spacing:.04em;
+  }
+  .rail .dot{
+    width:9px; height:9px; border-radius:50%; flex:none;
+    border:1.5px solid var(--faint); background:transparent;
+    transition:all .35s ease;
+  }
+  .rail .label{opacity:0; transform:translateX(-6px); transition:all .3s ease; white-space:nowrap;}
+  .rail a:hover .label{opacity:1; transform:none;}
+  .rail a:hover .dot{border-color:var(--accent);}
+  .rail a.active{color:var(--accent);}
+  .rail a.active .dot{background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 4px rgba(244,208,143,.14);}
+  .rail a.active .label{opacity:1; transform:none;}
+  @media (max-width:940px){ .rail{display:none;} }
+
+  /* persistent jump cue */
+  .jump{
+    position:fixed; right:1.2rem; bottom:1.2rem; z-index:40;
+    display:inline-flex; align-items:center; gap:.5rem;
+    background:rgba(18,50,74,.82); backdrop-filter:blur(8px);
+    border:1px solid var(--line); color:var(--accent);
+    padding:.6rem .95rem; border-radius:999px; font-size:.8rem; font-weight:600;
+    text-decoration:none; box-shadow:0 8px 30px rgba(0,0,0,.35);
+    transition:transform .25s ease, opacity .4s ease;
+  }
+  .jump:hover{transform:translateY(-2px);}
+  .jump.hide{opacity:0; pointer-events:none; transform:translateY(8px);}
+
+  /* ── ACT I : pitch ── */
+  section{position:relative;}
+  .pitch{padding:clamp(4.5rem,11vh,8rem) 0;}
+  .pitch + .pitch{border-top:1px solid var(--line-2);}
+
+  .hero{min-height:96vh; display:flex; flex-direction:column; justify-content:center; padding-top:2rem;}
+  .hero .kicker{font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); margin:0 0 1.6rem;}
+  .hero h1{
+    font-family:var(--serif); font-weight:400;
+    font-size:clamp(2.5rem,7.5vw,4.6rem); line-height:1.04; letter-spacing:-.01em;
+    margin:0; text-wrap:balance; color:var(--accent-2);
+  }
+  .hero h1 em{font-style:italic; color:var(--accent);}
+  .hero .lede{
+    font-size:clamp(1.05rem,2.4vw,1.3rem); color:var(--muted);
+    max-width:34ch; margin:1.8rem 0 0; line-height:1.55;
+  }
+  .scrollcue{margin-top:3rem; display:flex; align-items:center; gap:.7rem; color:var(--faint); font-size:.78rem; letter-spacing:.08em;}
+  .scrollcue .line{width:34px; height:1px; background:var(--faint); animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.35;} 50%{opacity:1;}}
+
+  h2.big{
+    font-family:var(--serif); font-weight:400;
+    font-size:clamp(1.9rem,4.6vw,2.9rem); line-height:1.12; letter-spacing:-.01em;
+    margin:0 0 1.1rem; text-wrap:balance; color:var(--accent-2);
+  }
+  h2.big em{font-style:italic; color:var(--accent);}
+  .sub{color:var(--muted); font-size:1.05rem; max-width:56ch; margin:0 0 2.2rem;}
+
+  /* integrate: two modes */
+  .modes{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.6rem;}
+  @media (max-width:620px){ .modes{grid-template-columns:1fr;} }
+  .mode{
+    background:linear-gradient(160deg,rgba(18,50,74,.55),rgba(11,34,51,.35));
+    border:1px solid var(--line); border-radius:16px; padding:1.4rem 1.3rem;
+  }
+  .mode .tag{font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--bronze); font-weight:700;}
+  .mode h3{font-family:var(--serif); font-weight:600; font-size:1.25rem; margin:.5rem 0 .5rem; color:var(--ink);}
+  .mode p{color:var(--muted); font-size:.92rem; margin:0;}
+  .mode .who{margin-top:.9rem; font-size:.8rem; color:var(--faint);}
+
+  .flowline{
+    margin-top:2rem; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
+    font-size:.85rem; color:var(--muted);
+  }
+  .flowline .chip{
+    background:rgba(244,208,143,.08); border:1px solid var(--line);
+    padding:.4rem .8rem; border-radius:999px; color:var(--accent-2); white-space:nowrap;
+  }
+  .flowline .arw{color:var(--bronze);}
+
+  /* send-an-invite: numbered sequence */
+  .steps{display:flex; flex-direction:column; gap:1.1rem; margin-top:1.4rem;}
+  .step{
+    display:grid; grid-template-columns:auto 1fr; gap:1.1rem; align-items:start;
+    padding:1.1rem 1.2rem; border:1px solid var(--line-2); border-radius:14px;
+    background:rgba(255,255,255,.015);
+  }
+  .step .idx{
+    font-family:var(--serif); font-size:1.5rem; color:var(--accent);
+    line-height:1; font-variant-numeric:tabular-nums; min-width:1.4em;
+  }
+  .step h4{margin:.1rem 0 .35rem; font-size:1.02rem; color:var(--ink);}
+  .step p{margin:0; color:var(--muted); font-size:.92rem;}
+  .step .persona{color:var(--accent); font-style:italic;}
+  .step em{color:var(--accent); font-style:italic;}
+
+  /* why cards */
+  .whys{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.6rem;}
+  @media (max-width:620px){ .whys{grid-template-columns:1fr;} }
+  .why{padding:1.3rem 1.3rem; border:1px solid var(--line-2); border-radius:14px; background:rgba(255,255,255,.015);}
+  .why .ic{font-size:1.4rem;}
+  .why h4{margin:.7rem 0 .4rem; font-size:1.05rem; color:var(--ink);}
+  .why p{margin:0; color:var(--muted); font-size:.9rem;}
+
+  /* transition into demo */
+  .transition{
+    text-align:center; padding:clamp(4rem,10vh,7rem) 0 clamp(3rem,7vh,5rem);
+    border-top:1px solid var(--line-2);
+  }
+  .transition .eyebrow{margin-bottom:1.4rem;}
+  .transition h2{
+    font-family:var(--serif); font-weight:400; font-style:italic;
+    font-size:clamp(1.7rem,4.4vw,2.6rem); color:var(--accent-2); margin:0 auto; max-width:20ch; line-height:1.15;
+  }
+  .transition .down{margin-top:2rem; color:var(--accent); font-size:1.6rem; animation:bob 2s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);} 50%{transform:translateY(7px);}}
+
+  /* ── ACT II : the live letter ── */
+  .letter{position:relative;}
+  .from-band{
+    text-align:center; padding:2.2rem 1.4rem; border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line-2);
+    background:rgba(11,34,51,.4);
+  }
+  .from-band .fl{font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--faint);}
+  .from-band .fn{font-family:var(--serif); font-size:1.15rem; color:var(--accent-2); margin-top:.5rem;}
+  .from-band .fn b{color:var(--accent); font-weight:600;}
+
+  .scene{
+    min-height:92vh; display:flex; flex-direction:column; justify-content:center;
+    padding:clamp(3rem,9vh,6rem) 1.4rem;
+    max-width:760px; margin:0 auto;
+  }
+  .scene .label{font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--bronze); font-weight:700; margin-bottom:1.4rem;}
+
+  /* staggered reveal */
+  .reveal > *{opacity:0; transform:translateY(24px); transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in > *{opacity:1; transform:none;}
+  .reveal.in > *:nth-child(2){transition-delay:.12s;}
+  .reveal.in > *:nth-child(3){transition-delay:.24s;}
+  .reveal.in > *:nth-child(4){transition-delay:.36s;}
+  .reveal.in > *:nth-child(5){transition-delay:.48s;}
+  @media (prefers-reduced-motion:reduce){
+    .reveal > *{opacity:1 !important; transform:none !important; transition:none;}
+  }
+
+  .display{
+    font-family:var(--sans); font-weight:900;
+    font-size:clamp(2.6rem,10vw,5.4rem); line-height:.98; letter-spacing:-.02em;
+    margin:0; text-wrap:balance;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .scene .big-sub{font-size:clamp(1.2rem,3.2vw,1.7rem); color:var(--ink); font-weight:500; margin:1.4rem 0 0; max-width:26ch; line-height:1.35;}
+  .scene .body{font-size:clamp(1.15rem,3vw,1.55rem); color:var(--ink); font-weight:400; line-height:1.45; max-width:24ch; margin:0;}
+  .scene .body b{background:linear-gradient(135deg,var(--accent),var(--bronze)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; font-weight:800;}
+
+  /* sticky emoji scene */
+  .sticky-scene{position:relative; min-height:150vh;}
+  .sticky-emoji{
+    position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center;
+    font-size:clamp(5rem,20vw,13rem); pointer-events:none;
+    filter:drop-shadow(0 20px 60px rgba(244,208,143,.2));
+  }
+  .sticky-text{position:relative; margin-top:-70vh; padding-bottom:14vh;}
+
+  /* countdown */
+  .countdown{display:flex; gap:1rem; margin:2rem 0 0; flex-wrap:wrap;}
+  .cd-unit{text-align:center; min-width:64px;}
+  .cd-num{font-family:var(--sans); font-weight:900; font-size:clamp(2rem,7vw,3.2rem); font-variant-numeric:tabular-nums;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1;}
+  .cd-lbl{font-size:.66rem; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); margin-top:.5rem;}
+
+  /* details card */
+  .details{
+    background:linear-gradient(160deg,var(--card-bg),rgba(11,34,51,.6));
+    border:1px solid var(--line); border-radius:18px; padding:1.6rem 1.5rem; margin-top:.5rem;
+  }
+  .details dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:.9rem 1.4rem;}
+  .details dt{color:var(--bronze); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700; padding-top:.15rem;}
+  .details dd{margin:0; color:var(--ink); font-size:1.02rem;}
+
+  /* feedback / rsvp scene */
+  .fb{max-width:520px; margin:0 auto; text-align:center;}
+  .fb .q{font-family:var(--serif); font-size:clamp(1.5rem,4vw,2.1rem); color:var(--accent-2); margin:0 0 .6rem; line-height:1.2;}
+  .fb .qs{color:var(--muted); margin:0 0 1.6rem;}
+  .fb textarea{
+    width:100%; min-height:88px; resize:vertical; background:rgba(11,34,51,.6);
+    border:1px solid var(--line); border-radius:12px; color:var(--ink);
+    padding:.9rem 1rem; font-family:var(--sans); font-size:.95rem; margin-bottom:1rem;
+  }
+  .fb textarea::placeholder{color:var(--faint);}
+  .fb textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(244,208,143,.14);}
+  .btn{
+    display:inline-flex; align-items:center; gap:.5rem; cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--bronze)); color:#20160a;
+    border:none; padding:.85rem 1.5rem; border-radius:999px; font-weight:700; font-size:1rem;
+    font-family:var(--sans); text-decoration:none; transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px); box-shadow:0 12px 30px rgba(244,208,143,.25);}
+  .btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--line);}
+  .btn:focus-visible, .rail a:focus-visible, .jump:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
+  .fb .note{margin-top:1rem; color:var(--faint); font-size:.8rem;}
+  .toast{margin-top:1rem; color:var(--accent); font-size:.9rem; min-height:1.2em;}
+
+  /* closing / back-to-pitch CTA */
+  .closer{
+    text-align:center; padding:clamp(4.5rem,11vh,8rem) 1.4rem;
+    border-top:1px solid var(--line);
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(244,208,143,.12), transparent 60%),
+      rgba(10,20,32,.5);
+  }
+  .closer .powered{font-size:.74rem; letter-spacing:.2em; text-transform:uppercase; color:var(--faint);}
+  .closer h2{font-family:var(--serif); font-weight:400; font-size:clamp(1.8rem,5vw,2.9rem); color:var(--accent-2); margin:1rem auto .4rem; max-width:18ch; line-height:1.12;}
+  .closer h2 em{font-style:italic; color:var(--accent);}
+  .closer p{color:var(--muted); max-width:44ch; margin:0 auto 2rem;}
+  .closer .cta-row{display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap;}
+  .footnote{margin-top:2.5rem; color:var(--faint); font-size:.78rem;}
+
+  .wm{position:fixed; top:.9rem; left:50%; transform:translateX(-50%); z-index:30;
+    font-size:.66rem; letter-spacing:.24em; text-transform:uppercase; color:var(--faint);
+    background:rgba(11,34,51,.55); border:1px solid var(--line-2); padding:.3rem .8rem; border-radius:999px;}
+  @media (max-width:520px){ .wm{display:none;} }
+  </style>
+</head>
+<body>
+
+  <div class="wm">Scrolly Letters · demo for event partners</div>
+
+  <!-- scroll-marker rail -->
+  <nav class="rail" aria-label="Section navigation">
+    <a href="#intro" data-t="intro"><span class="dot"></span><span class="label">Intro</span></a>
+    <a href="#integrate" data-t="integrate"><span class="dot"></span><span class="label">Integrate</span></a>
+    <a href="#invite" data-t="invite"><span class="dot"></span><span class="label">Send an invite</span></a>
+    <a href="#why" data-t="why"><span class="dot"></span><span class="label">Why it works</span></a>
+    <a href="#demo" data-t="demo"><span class="dot"></span><span class="label">The letter</span></a>
+  </nav>
+
+  <a href="#demo" class="jump" id="jumpBtn">See the live letter <span aria-hidden="true">↓</span></a>
+
+  <!-- ═══════════ ACT I — PITCH ═══════════ -->
+
+  <section class="pitch hero" id="intro">
+    <div class="wrap">
+      <p class="kicker">Scrolly Letters · Event Letters</p>
+      <h1>Most event emails get skipped.<br>This one gets <em>scrolled to the end.</em></h1>
+      <p class="lede">A Scrolly Letter turns an invite or recap into a short, cinematic scroll — one line at a time — that people actually finish. Then it sends a signal back to you.</p>
+      <div class="scrollcue"><span class="line"></span> Scroll to see how it fits your platform</div>
+    </div>
+  </section>
+
+  <section class="pitch" id="integrate">
+    <div class="wrap">
+      <p class="eyebrow">01 · Fits into what you already run</p>
+      <h2 class="big">Nothing new for your members to learn. <em>A link, not an app.</em></h2>
+      <p class="sub">Every letter is just a shareable URL. It opens full-screen in any browser — no install, no login for the recipient. There are two ways to plug it in, depending on who you are.</p>
+
+      <div class="modes">
+        <div class="mode">
+          <span class="tag">For event organizers</span>
+          <h3>Drop-in link</h3>
+          <p>Pick an event, fill in a few lines, get a link. Paste it into your email blast, WhatsApp, or ticket confirmation. Live in minutes, zero engineering.</p>
+          <div class="who">SACCOs · communities · churches · HR teams · hotels</div>
+        </div>
+        <div class="mode">
+          <span class="tag">For platforms</span>
+          <h3>Embed &amp; API</h3>
+          <p>Your members hit “Invite” inside your product; you call our endpoint with the event + recipient and get back a letter link to send. It carries your branding and colors.</p>
+          <div class="who">ticketing · events · membership · community apps</div>
+        </div>
+      </div>
+
+      <div class="flowline">
+        <span class="chip">Your signed-up member</span><span class="arw">→</span>
+        <span class="chip">generates a letter</span><span class="arw">→</span>
+        <span class="chip">recipient opens the link</span><span class="arw">→</span>
+        <span class="chip">RSVP + feedback back to you</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="pitch" id="invite">
+    <div class="wrap">
+      <p class="eyebrow">02 · How a member sends one</p>
+      <h2 class="big">Someone who already signed up brings <em>a friend</em>.</h2>
+      <p class="sub">This is the part that spreads. A member who’s attending doesn’t just forward a flyer — they send a personal letter. Here’s the whole path, start to finish.</p>
+
+      <div class="steps">
+        <div class="step">
+          <span class="idx">1</span>
+          <div>
+            <h4><span class="persona">Amara</span> is signed up for the event on your platform.</h4>
+            <p>She sees an “Invite a friend” button next to her ticket or RSVP.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="idx">2</span>
+          <div>
+            <h4>She picks the event and adds one personal line.</h4>
+            <p>“You have to be in the room for this one.” The rest of the letter is already built from the event details — she isn’t writing an essay.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="idx">3</span>
+          <div>
+            <h4>She sends the link to a friend.</h4>
+            <p>WhatsApp, DM, wherever. It arrives as “Amara invited you,” not as marketing.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="idx">4</span>
+          <div>
+            <h4>The friend scrolls through the letter — and RSVPs.</h4>
+            <p>They finish the story, tap “Get your invite,” and can leave a question for the host. That’s exactly the demo below.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="idx">5</span>
+          <div>
+            <h4>You get a new attendee <em>and</em> a signal.</h4>
+            <p>The RSVP and any feedback land back with the host — so you know who’s coming and what they want before the day.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pitch" id="why">
+    <div class="wrap">
+      <p class="eyebrow">03 · Why it’s worth adding</p>
+      <h2 class="big">It does three jobs a flyer <em>can’t</em>.</h2>
+      <p class="sub">Not a nicer poster — a different mechanic. It gets finished, it travels person-to-person, and it feeds you data.</p>
+
+      <div class="whys">
+        <div class="why">
+          <div class="ic">📖</div>
+          <h4>People finish it</h4>
+          <p>One line at a time is a format built for the phone. Completion beats a wall of text nobody scrolls past the first paragraph of.</p>
+        </div>
+        <div class="why">
+          <div class="ic">🔗</div>
+          <h4>It spreads member-to-member</h4>
+          <p>A personal invite from a friend converts far better than a broadcast. Every attendee becomes a warm channel to the next.</p>
+        </div>
+        <div class="why">
+          <div class="ic">📡</div>
+          <h4>It sends a signal back</h4>
+          <p>RSVPs and questions flow to the host. You learn who’s coming and what would make them show up — before the event, not after.</p>
+        </div>
+        <div class="why">
+          <div class="ic">🎨</div>
+          <h4>It carries your brand</h4>
+          <p>Colors, host name, and tone are all yours. To your members it feels like a feature of your platform, not a third-party bolt-on.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="transition">
+    <div class="wrap">
+      <p class="eyebrow">The part your invitee actually sees</p>
+      <h2>Here’s the letter Amara’s friend opened.</h2>
+      <div class="down" aria-hidden="true">↓</div>
+    </div>
+  </section>
+
+  <!-- ═══════════ ACT II — THE LIVE LETTER ═══════════ -->
+
+  <div class="letter" id="demo">
+    <div class="from-band">
+      <div class="fl">A Scrolly Letter</div>
+      <div class="fn"><b>Amara</b> invited you to something</div>
+    </div>
+
+    <!-- hero scene: sticky emoji -->
+    <div class="sticky-scene">
+      <div class="sticky-emoji" aria-hidden="true">🌆</div>
+      <div class="sticky-text">
+        <div class="scene reveal">
+          <p class="label">You’re invited</p>
+          <h2 class="display">A Founders’ Rooftop Night</h2>
+          <p class="big-sub">One evening. The people building things in this city, in one room.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- countdown -->
+    <div class="scene reveal">
+      <p class="label">It’s almost here</p>
+      <h2 class="display" style="font-size:clamp(2rem,7vw,3.6rem)">Save the date</h2>
+      <div class="countdown" id="countdown" aria-live="polite">
+        <div class="cd-unit"><div class="cd-num" data-days>–</div><div class="cd-lbl">Days</div></div>
+        <div class="cd-unit"><div class="cd-num" data-hrs>–</div><div class="cd-lbl">Hours</div></div>
+        <div class="cd-unit"><div class="cd-num" data-min>–</div><div class="cd-lbl">Minutes</div></div>
+        <div class="cd-unit"><div class="cd-num" data-sec>–</div><div class="cd-lbl">Seconds</div></div>
+      </div>
+    </div>
+
+    <!-- what to expect -->
+    <div class="scene reveal">
+      <p class="label">What to expect</p>
+      <p class="body">Short talks from three founders who’ve actually shipped. Then the part that matters — <b>real conversation</b> over dinner, on a rooftop, as the city lights up.</p>
+    </div>
+
+    <!-- why you don't want to miss -->
+    <div class="scene reveal">
+      <p class="label">Why not to miss it</p>
+      <p class="body">The rooms where things happen are <b>smaller than you think</b>. This is one of them — and someone already saved you a seat.</p>
+    </div>
+
+    <!-- the details -->
+    <div class="scene reveal">
+      <p class="label">The details</p>
+      <div class="details">
+        <dl>
+          <dt>When</dt><dd id="whenText">Thursday, 13 August 2026 · 6:30 PM</dd>
+          <dt>Where</dt><dd>The Alchemist Rooftop · Westlands, Nairobi</dd>
+          <dt>Hosted by</dt><dd>Nairobi Makers’ Circle</dd>
+          <dt>Seats</dt><dd>40 · invite-only</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- feedback / rsvp scene -->
+    <div class="scene reveal">
+      <div class="fb">
+        <p class="label" style="text-align:center">Before you go</p>
+        <p class="q">Coming?</p>
+        <p class="qs">Anything you’d want to ask the host before the day?</p>
+        <textarea id="fbInput" placeholder="e.g. Is there parking? Can I bring a co-founder?"></textarea>
+        <div style="display:flex; gap:.7rem; justify-content:center; flex-wrap:wrap;">
+          <button class="btn" id="rsvpBtn" type="button">Get your invite →</button>
+          <button class="btn ghost" id="askBtn" type="button">Send question</button>
+        </div>
+        <div class="toast" id="fbToast" role="status"></div>
+        <p class="note">In the real product, this RSVP and question land with the host in real time.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- closing: back to the pitch -->
+  <section class="closer">
+    <p class="powered">Powered by Scrolly Letters</p>
+    <h2>Want <em>this</em> for your events?</h2>
+    <p>That whole letter was one link — brandable to your platform, sent by one of your own members. This is the demo; the real one wears your colors.</p>
+    <div class="cta-row">
+      <a href="#intro" class="btn ghost">Re-read how it fits ↑</a>
+      <a href="mailto:kiboipatience321@gmail.com?subject=Event%20Letters%20for%20our%20events" class="btn">Let’s talk →</a>
+    </div>
+    <p class="footnote">This is a demo built for prospective partners. Names, brands, and the event are fictional.</p>
+  </section>
+
+  <script>
+  (function(){
+    "use strict";
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+    /* ── scroll-triggered reveals ── */
+    var reveals = document.querySelectorAll('.reveal');
+    if('IntersectionObserver' in window && !reduce){
+      var ro = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); ro.unobserve(e.target); } });
+      }, {threshold:.25, rootMargin:'0px 0px -8% 0px'});
+      reveals.forEach(function(el){ ro.observe(el); });
+    } else {
+      reveals.forEach(function(el){ el.classList.add('in'); });
+    }
+
+    /* ── rail active state ── */
+    var railLinks = {};
+    document.querySelectorAll('.rail a').forEach(function(a){ railLinks[a.getAttribute('data-t')] = a; });
+    var sectionIds = ['intro','integrate','invite','why','demo'];
+    var sections = sectionIds.map(function(id){ return document.getElementById(id); }).filter(Boolean);
+    if('IntersectionObserver' in window){
+      var so = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){
+            var id = e.target.id;
+            Object.keys(railLinks).forEach(function(k){ railLinks[k].classList.toggle('active', k===id); });
+          }
+        });
+      }, {threshold:.01, rootMargin:'-45% 0px -45% 0px'});
+      sections.forEach(function(s){ so.observe(s); });
+    }
+
+    /* ── hide jump button once the demo is reached ── */
+    var jumpBtn = document.getElementById('jumpBtn');
+    var demo = document.getElementById('demo');
+    if(jumpBtn && demo && 'IntersectionObserver' in window){
+      var jo = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ jumpBtn.classList.toggle('hide', e.isIntersecting || e.boundingClientRect.top < 0); });
+      }, {threshold:0});
+      jo.observe(demo);
+    }
+
+    /* ── live countdown ── */
+    var target = new Date('2026-08-13T18:30:00+03:00').getTime();
+    var el = {
+      d: document.querySelector('[data-days]'), h: document.querySelector('[data-hrs]'),
+      m: document.querySelector('[data-min]'), s: document.querySelector('[data-sec]')
+    };
+    function pad(n){ return (n<10?'0':'')+n; }
+    function tick(){
+      var diff = target - Date.now();
+      if(diff < 0){ if(el.d){el.d.textContent='0';el.h.textContent='00';el.m.textContent='00';el.s.textContent='00';} return; }
+      var d = Math.floor(diff/86400000);
+      var h = Math.floor(diff%86400000/3600000);
+      var m = Math.floor(diff%3600000/60000);
+      var s = Math.floor(diff%60000/1000);
+      if(el.d){ el.d.textContent=d; el.h.textContent=pad(h); el.m.textContent=pad(m); el.s.textContent=pad(s); }
+    }
+    tick(); setInterval(tick, 1000);
+
+    /* ── feedback / rsvp demo interactions ── */
+    var toast = document.getElementById('fbToast');
+    var input = document.getElementById('fbInput');
+    function say(msg){ if(toast){ toast.textContent = msg; } }
+    var rsvp = document.getElementById('rsvpBtn');
+    var ask = document.getElementById('askBtn');
+    if(rsvp){ rsvp.addEventListener('click', function(){
+      rsvp.textContent = "You're on the list ✓";
+      say('In the real product, the host just got your RSVP.');
+    }); }
+    if(ask){ ask.addEventListener('click', function(){
+      var v = input && input.value.trim();
+      if(!v){ say('Type a question first — then it goes straight to the host.'); if(input) input.focus(); return; }
+      say('Sent to the host: “' + (v.length>60 ? v.slice(0,60)+'…' : v) + '”');
+      if(input) input.value='';
+    }); }
+  })();
+  </script>
+</body>
+</html>
