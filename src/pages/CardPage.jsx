@@ -113,6 +113,9 @@ export default function CardPage() {
     linkedlocal: ['#E9B824', '#4C86C6', '#0A3A6B', '#fff']
 
   }
+  const brandStyle = card.accent 
+  ? { '--accent': card.accent, '--accent-2': card.accent_2, '--bg': card.bg}
+  : undefined
 
 
   function handleRevealed() {
@@ -122,7 +125,9 @@ export default function CardPage() {
             particleCount: 120,
             spread: 80,
             origin: {y: 0.6},
-            colors: CONFETTI_THEMES[card.theme] || CONFETTI_THEMES.hue,
+            colors: card.accent
+                ? [card.accent, card.accent_2, card.bg, '#fff']
+                : (CONFETTI_THEMES[card.theme] || CONFETTI_THEMES.hue),
         })
     }, 300)
   }
@@ -133,7 +138,7 @@ export default function CardPage() {
     if (!revealed) {
         const isEvent = card.kind === 'event'
         return(
-             <div className={`landing theme-${card.theme}`}>
+             <div className={`landing ${card.accent ? '' : `theme-${card.theme}`}`} style={brandStyle}>
         <AmbientBackground emoji={card.emoji} />
         <div className="landing-inner">
           <span className="landing-emoji">{card.emoji}</span>

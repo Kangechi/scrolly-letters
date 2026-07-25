@@ -49,8 +49,14 @@ function Scene({section, emoji}) {
 }
 
 export default function ScrollPage({card}) {
+    const brandStyle = card.accent
+    ? {'--accent': card.accent, '--accent-2' : card.accent_2, '--bg' : card.bg}
+    : undefined
     return(
-    <div className={`card-wrapper theme-${card.theme}`}>
+    <div 
+    className={`card-wrapper ${card.accent ? '' : `theme-${card.theme}`}`}
+    style={brandStyle}
+    >
         <AmbientBackground emoji={card.emoji} />
         {card.sections.map((section, i)=> (
             <Scene key={i} section={section} emoji={card.emoji}/>
