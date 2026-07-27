@@ -49,7 +49,7 @@ function Scene({section, emoji}) {
 }
 
 export default function ScrollPage({card}) {
-    const brandStyle = card.accent
+    const brandStyle = card?.accent
     ? {'--accent': card.accent, '--accent-2' : card.accent_2, '--bg' : card.bg}
     : undefined
     return(

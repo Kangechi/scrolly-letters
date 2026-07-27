@@ -113,7 +113,7 @@ export default function CardPage() {
     linkedlocal: ['#E9B824', '#4C86C6', '#0A3A6B', '#fff']
 
   }
-  const brandStyle = card.accent 
+  const brandStyle = card?.accent
   ? { '--accent': card.accent, '--accent-2': card.accent_2, '--bg': card.bg}
   : undefined
 
