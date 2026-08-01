@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Send animated, personalised scroll-driven cards to the people you love." />
-    <title>Scrolly Letters ✦</title>
+    <!-- NOTE: <title> and <meta name="description"> are deliberately NOT here.
+         They are owned by src/components/PageMeta.jsx so they can differ per
+         route. Leaving static copies here produced DUPLICATE tags (measured:
+         the static description sorted first and shadowed the per-route one).
+         Their only audience is search engines, which render JS — the no-JS
+         social crawlers read og:title / og:description below instead. -->
 
     <!-- ── Open Graph — the ONLY thing WhatsApp / LinkedIn / Facebook ever see ── -->
     <meta property="og:type" content="website" />

@@ -5,10 +5,12 @@ import Create from './pages/Create'
 import CreateEvent from './pages/Create_event'
 import Customize from './pages/Customize'
 import BubbleNav from './components/BubbleNav'
+import PageMeta from './components/PageMeta'
 
 export default function App() {
   return (
     <BrowserRouter>
+    <PageMeta/>
     <BubbleNav/>
     <Routes>
       <Route path='/' element={<Home/>}/>

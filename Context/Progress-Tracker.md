@@ -152,6 +152,46 @@ User deployed; all 6 post-deploy checks pass against `https://scrolly-letters.ve
 
 **Re-run this check block after any `vercel.json` or `public/` change** — a broken header is invisible in the UI.
 
+## SEO Unit 3 — DONE (Sat 1 Aug, built + measured, awaiting deploy)
+
+**New file `src/components/PageMeta.jsx`; wired into `App.jsx`** next to `<BubbleNav/>` inside `<BrowserRouter>`. `npm run build` green, 487 modules.
+
+**React 19 changed the approach.** React 19.2.6 hoists `<title>`/`<meta>`/`<link>` rendered anywhere in the tree into `<head>` — so NO `react-helmet`, NO `useEffect`, NO `document.head` poking. Unit 3 is a component that returns JSX.
+
+**System framing: `PAGE_META` is the project's THIRD lookup table** — `SCENE_MAP` (type→component), `CONFETTI_THEMES` (theme→colours), now `PAGE_META` (route→metadata). Same shape: a dictionary turning a string into behaviour. The component is shaped like `BubbleNav` — rendered once in `App.jsx`, reads `useLocation`, behaves per route.
+
+**Four design decisions:**
+1. **The map is an ALLOWLIST, not a blocklist.** Unlisted routes fall through to `PRIVATE`. A future `/dashboard` is private by default until deliberately published. Blocklist failure = "forgot to add it, it leaked"; allowlist failure = "forgot to add it, it's invisible". Only one is recoverable.
+2. **Card title hardcoded generic** (`'A Scrolly Letter ✦'`) — the security constraint in code; a real title would leak letter content into the tab, session history and analytics.
+3. **`{page && <link rel="canonical">}`** — canonical only on public routes; declaring one on a noindex page is contradictory.
+4. **`SITE + key`, not `SITE + pathname`** — canonical points at the NORMALISED path (trailing slashes stripped), so `/create/?ref=whatsapp` → `/create`. That is canonical's whole job.
+
+**MEASURED, NOT ASSUMED — and it changed the code.** Open question was whether React 19 replaces or duplicates the static `<title>`/`<meta description>` already in `index.html`. Verified empirically via `chrome --headless=old --virtual-time-budget=6000 --dump-dom http://localhost:5174/<route>`:
+- **BOTH tags duplicated, in OPPOSITE orders.** React's `<title>` inserted FIRST (so it won, by luck); the STATIC `description` sorted FIRST and was **silently shadowing every per-route description.**
+- **Fix: deleted both static tags from `index.html`**, replaced with a comment explaining why. `PageMeta` now sole owner. Trade-off stated: a JS-less visitor gets no title/description — acceptable because the only no-JS audience is social crawlers, which read the still-static `og:title`/`og:description`. **One owner per concern.**
+- Re-verified all 5 routes: exactly one `<title>`, one `description`, canonical on the 4 public routes only, `/card/*` generic with no canonical. ✓
+- **LESSON: when two systems write to the same place, measure — don't reason about which wins. A duplicate tag throws no error and looks fine in the browser.**
+
+## Google Search Console (Sat 1 Aug)
+
+**Verification file `public/google56de0d6e543050aa.html` committed (`425b10e`), pushed, confirmed serving 200.** Must be a **URL-prefix** property, NOT a Domain property — the latter needs a DNS TXT record on `vercel.app`, which Vercel owns. **Deleting that file un-verifies the property.**
+
+**Why it's mandatory, not optional:** Google does not go looking for new sites; it discovers pages by following links from pages it already knows. With no inbound links you are not blocked, you are **unknown**. `sitemap.xml` is the side door for exactly that case — it hands Google your 4 URLs directly, bypassing stage 7. Search Console also provides the only feedback loop (Coverage tells you indexed vs skipped vs why) — without it you can't distinguish "not indexed yet" from "indexed and ranked 400th".
+
+**REMAINING USER ACTION:** Sitemaps → submit `sitemap.xml`; URL Inspection → homepage → Request Indexing. **Expect Coverage to later show card pages as "Excluded by 'noindex' tag" — that is SUCCESS, not an error.**
+
+## BUG (diagnosed 1 Aug, NOT yet fixed) — event draft shows "Card not Found 🫤" + 406
+
+**Symptom:** loading a saved event's invite URL shows the defensive "Card not Found" branch; console shows `Failed to load resource: 406`.
+
+**Cause — TWO independent failures stacked, either alone is sufficient:**
+1. **`CardPage.jsx` never queries the `events` table.** It checks the local bundle (`kind:'event'` demos only) then queries `cards`. A self-serve event lives in `events`, so `.eq('id', id).single()` matches 0 rows → PostgREST returns **406 Not Acceptable** (that's `.single()`'s behaviour when the result isn't exactly one row) → `setCard(null)` → "Card not Found".
+2. **Even after pointing the query at `events`, RLS blocks it.** The SELECT policy exposes only `paid AND now() < paid_until`. A draft has `paid=false` → 0 rows → identical 406.
+
+**This is Events Unit 5**, and it is exactly why the plan sequences the reader BEFORE the payment gate, testing with a manual `paid`/`paid_until` flip in the Supabase table editor to isolate the read path from the policy.
+
+**NOT our bugs (browser-extension noise, ignore):** `document-start.js:10963 Could not establish connection. Receiving end does not exist.` (×2) and `[Violation] 'visibilitychange' handler took 158ms` — content-script errors from an installed extension. Reproduce in an incognito window and they disappear.
+
 ## SECURITY posture of the SEO layer (resolved 1 Aug — read before Unit 3)
 
 Per `AI-Workflow-rules.md` ("walk me through each security implementation"). Conclusion: **SEO work here is a PRIVACY exercise, not a security one.**
