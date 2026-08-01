@@ -1,0 +1,14 @@
+# Scrolly Letters — crawl policy
+#
+# NOTE: /card/ is deliberately NOT disallowed here, even though card pages must
+# never be indexed. Those pages carry an `X-Robots-Tag: noindex, nofollow`
+# response header (see vercel.json), and a crawler has to be allowed to FETCH a
+# page in order to SEE that header. Disallowing the path would hide the noindex
+# and leave a bare URL indexable if someone posts a card link publicly.
+#
+# Allow the fetch, deny the index. They are different controls.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://scrolly-letters.vercel.app/sitemap.xml

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en-KE">
+<head>
+<meta charset="UTF-8" />
+<title>og-image source · 1200×630</title>
+<!-- ============================================================
+     SOURCE FILE for public/og-image.png — NOT served to users.
+     Lives outside public/, so Vite never copies it into dist.
+
+     Re-render after any brand change:
+       chrome --headless --disable-gpu --hide-scrollbars \
+              --window-size=1200,630 --virtual-time-budget=8000 \
+              --screenshot=public/og-image.png tools/og-image.html
+
+     Colours below are copied verbatim from index.css :root (--sl-*),
+     so this card is on-brand by construction rather than by eye.
+     HARD RULE: generic branding only — never a real letter's content.
+     ============================================================ -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --sl-paper:      #f3ecee;
+    --sl-surface:    #fffafb;
+    --sl-purple:     #6b4e9e;
+    --sl-purple-soft:#e7ddef;
+    --sl-rose:       #d98a9a;
+    --sl-ink:        #26192e;
+    --sl-muted:      #8c7d90;
+    --sl-border:     rgba(107,78,158,.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: var(--sl-paper);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--sl-ink);
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Ambient wash — the same light-paper glow the landing uses, flattened. */
+  .glow  { position: absolute; border-radius: 50%; filter: blur(90px); }
+  .glow-a { width: 620px; height: 620px; left: -180px; top: -240px;
+            background: rgba(107,78,158,.20); }
+  .glow-b { width: 520px; height: 520px; right: -120px; bottom: -220px;
+            background: rgba(217,138,154,.26); }
+
+  /* Hairline grid — barely there, keeps the paper from reading as flat fill. */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--sl-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--sl-border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: .35;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000, transparent);
+  }
+
+  .inner { position: relative; display: flex; align-items: center;
+           width: 100%; padding: 0 76px; gap: 56px; }
+
+  .copy { flex: 1 1 0; min-width: 0; }
+
+  .mark {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: 19px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--sl-purple);
+    padding: 10px 20px; border-radius: 999px;
+    background: var(--sl-purple-soft);
+    margin-bottom: 34px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600; font-size: 92px; line-height: .98;
+    letter-spacing: -.022em; margin-bottom: 26px;
+    background: linear-gradient(102deg, var(--sl-ink) 8%, var(--sl-purple) 62%, var(--sl-rose) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h1 em { font-style: italic; font-weight: 500; }
+
+  .sub { font-size: 29px; line-height: 1.42; color: var(--sl-muted); max-width: 15.5em; }
+
+  /* ── The card mock: a letter mid-open, generic by design ── */
+  .stack { position: relative; flex: 0 0 340px; height: 400px; }
+
+  .sheet {
+    position: absolute; inset: 0;
+    background: var(--sl-surface);
+    border: 1px solid var(--sl-border);
+    border-radius: 26px;
+    /* Layered shadow — near/tight for contact, far/soft for lift. */
+    box-shadow:
+      0 2px 4px rgba(38,25,46,.05),
+      0 12px 26px rgba(38,25,46,.09),
+      0 38px 70px rgba(107,78,158,.16);
+  }
+  .sheet-back  { transform: rotate(-7deg) translate(-16px, 12px); opacity: .5; }
+  .sheet-mid   { transform: rotate(-3.5deg) translate(-7px, 6px); opacity: .78; }
+
+  .sheet-front { display: flex; flex-direction: column; justify-content: center;
+                 gap: 17px; padding: 46px 38px; transform: rotate(2deg); }
+
+  .emoji { font-size: 74px; line-height: 1; margin-bottom: 10px; }
+
+  /* Redacted text bars — deliberately unreadable: the preview must never
+     imply a real message, and abstract bars read as "a letter" at thumbnail size. */
+  .bar { height: 15px; border-radius: 999px; background: var(--sl-purple-soft); }
+  .bar-1 { width: 88%; }
+  .bar-2 { width: 100%; }
+  .bar-3 { width: 72%; }
+  .bar-accent { width: 46%; height: 17px;
+                background: linear-gradient(90deg, var(--sl-purple), var(--sl-rose)); }
+
+  /* Scroll cue — the interaction the whole product is named for. */
+  .cue { position: absolute; right: 26px; bottom: -34px;
+         display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .cue-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sl-purple); }
+  .cue-dot:nth-child(2) { opacity: .5; }
+  .cue-dot:nth-child(3) { opacity: .22; }
+</style>
+</head>
+<body>
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
+  <div class="grid"></div>
+
+  <div class="inner">
+    <div class="copy">
+      <span class="mark">Scrolly Letters ✦</span>
+      <h1>Words that <em>unfold</em> as you scroll.</h1>
+      <p class="sub">Animated, personalised cards for every moment worth saying something.</p>
+    </div>
+
+    <div class="stack">
+      <div class="sheet sheet-back"></div>
+      <div class="sheet sheet-mid"></div>
+      <div class="sheet sheet-front">
+        <span class="emoji">💌</span>
+        <span class="bar bar-1"></span>
+        <span class="bar bar-2"></span>
+        <span class="bar bar-3"></span>
+        <span class="bar bar-accent"></span>
+      </div>
+      <div class="cue">
+        <span class="cue-dot"></span>
+        <span class="cue-dot"></span>
+        <span class="cue-dot"></span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

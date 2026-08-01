@@ -4,6 +4,8 @@ This is the file that keeps track of all that we do & even acts as a documentati
 
 ## Current Phase
 
+- **Session of Sat 1 Aug — SEO UNITS 1 + 2 BUILT (not yet deployed).** OG/Twitter tags, `X-Robots-Tag` noindex on card pages, `og-image.png`, `robots.txt`, `sitemap.xml`. `npm run build` green (486 modules). See "SEO Units 1 + 2 — DONE (1 Aug)" below. Build guide: `scrolly-letters-seo-build-guide.html` + artifact https://claude.ai/code/artifact/702611b6-99af-45df-8e64-5abd990308ea (3 interactive micro-worlds).
+- **Session of Sat 1 Aug (earlier) — BACKLOG AUDIT + PLANNING.** Audited code (not memory) against this tracker. See "Backlog Audit" and "Plan" below. Three new tracks opened: SEO/discoverability, loop engineering (CI → analytics → session ritual), and finishing Events end-to-end. *(Note: entries first written this session were mislabelled "31 Jul" — corrected to 1 Aug. "Tomorrow" in the plan = Sun 2 Aug.)*
 - **Session of Sat 25 Jul — EVENTS track: pressure-test complete, build guide next.** Chose Events over Customize for today. Ran the Socratic assumption-break first (per AI-Workflow rules). All major forks resolved — see "Event System — Spec v1" below. Next deliverable is a BUILD GUIDE (not code) for the self-serve event builder.
 - **Session of Mon 20 Jul (7pm) — LANDING COMPLETE.** Goals 1, 2, 3 done + partial 5 (pricing shown). Create/Customize/Event scaffolded for solo work tomorrow. Build guide shipped.
 - Build guide (interactive): artifact https://claude.ai/code/artifact/40359774-5d7b-4a71-9bfa-67b1ee97460d — also saved in repo at `scrolly-letters-landing-build-guide.html`.
@@ -46,7 +48,133 @@ Extended `Create_event.jsx` from scaffold → full self-serve builder. User draf
 ### Event `events` table — working schema (draft, to finalize in build guide)
 `id` (nanoid, public invite URL) · `manage_id` (nanoid secret, edit+feedback) · `created_at` · `host` · `emoji` · `event_date` · `landing_title` · `landing_sub` · `cta_label` · `ticket_url` (external link-out) · `accent` · `accent_2` · `bg` (brand hex → inline CSS vars) · `sections` (JSONB) · `paid` (bool) · `paid_until` (timestamptz). RLS: public SELECT where `paid AND now() < paid_until`; manage edits via `security definer` RPC keyed on `manage_id`.
 
-## Current Goal
+## Backlog Audit (Sat 1 Aug) — verified against code, not memory
+
+**CLOSED (was listed open, is actually done):**
+- **Goal 5 pricing (KES 50).** `api/pay.js:39` charges `amount: 5000` KES; `Outro.jsx:157,168` copy says KES 50. "Already-paid cards unaffected" holds *by construction* — the share gate is the `paid` boolean, price is never stored per-card, so historical cards can't be re-priced. Open question resolved; no code change needed.
+
+**EVENTS — confirmed incomplete (blocking revenue):**
+- Block 2 verify step never ran: `npm run build` + fill `/event` + Save + confirm a `paid=false` row in Supabase.
+- Unit 3c live preview — not started.
+- Unit 4 payment gate (KES 500 × 14-day unit → sets `paid`/`paid_until`) — not started.
+- **Unit 5 — VERIFIED MISSING.** `CardPage.jsx:79-96` reads the local bundle then the `cards` table only; it never queries `events`. A saved event is unreachable at its own invite URL even if paid. This is the dead end.
+- Unit 6 manage URL — the `update_event` / `get_event_feedback` RPCs exist in the DB, but no UI consumes them.
+
+**CUSTOMIZE (Goal 6) — scaffold only.** `Customize.jsx` is 62 lines: the backdrop picker selects, nothing else. Live price, preview, and carry-into-pay are all TODO. The `assets.json` + emoji-file design requested on 20 Jul was never built (25 Jul went to Events instead). Premium surcharge still an undefined number.
+
+**Long-open threads, still unresolved:**
+- `cards` RLS correctness — open since 1 Jul, never confirmed after the Paystack pivot.
+- Free-vs-signup funnel decision — open since 30 Jun.
+- Oversized-type visual redesign (`scrolly-letters-scene-prototype.html`) — never ported into `src/components/scenes/*`. This is the direct answer to client feedback "UI is plain but UX is amazing".
+- Bundle >500kB, no code-splitting.
+- Dead 0-byte files: `Create_Card.jsx`, `ThemePicker.jsx`, `OccasionCard.jsx`, `ui/Anima*.jsx`, `styles/themes.css`.
+- **Session of Mon 27 Jul was never logged here** (commit `950adba` "fix(events): guard brandStyle against null card" + `cards_data.jsx` edits + events build-guide update). Gap in the record.
+
+## SEO — problem reframed (1 Aug)
+
+The product's own content **must never be indexed** — real letters and paid event pages are private (HARD RULE, privacy). So `/card/*` gets `noindex`, and the entire searchable surface is four marketing routes: `/`, `/create`, `/event`, `/customize`. The goal is therefore *not* "get the site indexed" — it's **build a landing surface worth indexing**, because there is currently almost no crawlable text on it.
+
+Verified gaps in `index.html`: zero Open Graph / Twitter tags · no `robots.txt` · no `sitemap.xml` · no canonical · no JSON-LD · one shared `<title>` for all five routes.
+
+**Highest-ROI item is not SEO at all:** social crawlers (WhatsApp, LinkedIn, X) do **not execute JavaScript**, so no React-rendered tag can ever reach them. Every shared card link currently previews as a naked URL with no image or title — on a product whose entire growth loop *is* WhatsApp sharing. Fix = static tags in `index.html`.
+
+**Constraint (confirmed 1 Aug): site is `https://scrolly-letters.vercel.app/`.** `vercel.app` is on the Public Suffix List, so the subdomain inherits none of Vercel's domain authority — it ranks as a brand-new standalone site and reads as a hobby project to the Kenyan orgs being pitched. Category-search SEO is effectively unwinnable until a real domain is bought. **Custom domain = Unit 0, everything canonical/sitemap-shaped depends on it.**
+
+## Plan — next session (Sun 2 Aug)
+
+Decisions taken 1 Aug: SEO target = mix of brand + category + share-previews · main build block = finish Events end-to-end · loops = all three, sequenced.
+
+**BLOCK 0 — Domain: DEFERRED by decision (31 Jul).** Staying on `*.vercel.app` for now. Accepted consequence, stated and chosen: share-previews and brand search will work; **category-search SEO stays effectively out of reach** until a real domain exists, and the canonical/`og:url`/sitemap URLs will need a second pass when one is bought. Still worth doing tomorrow (2 min): confirm the production deployment isn't serving `X-Robots-Tag: noindex` — Vercel sets that on *preview* deployments, and if it ever leaked to prod nothing else in Block 1 can work.
+- **NEEDED AT START OF SESSION: the exact production vercel.app hostname.** Not recorded anywhere in this repo (no `.vercel/` dir, remote is just `github.com/Kangechi/scrolly-letters`). Every absolute URL in Block 1 depends on it.
+
+**BLOCK 1 — SEO / discoverability layer.**
+- Unit 1: static meta layer in `index.html` — OG + Twitter card + canonical. Fixes WhatsApp previews. **Concept taught 31 Jul, code not yet typed** — see "Unit 1 concept (taught 31 Jul)" below.
+- Unit 1b: `public/og-image.png` @ 1200×630. **Decided: build it as an HTML card using the real `--sl-*` Mauve Dusk tokens + Fraunces/Space Grotesk, then screenshot to PNG.** Chosen over Canva/video-frame because it uses the actual site CSS, so it's guaranteed on-brand and re-renderable whenever branding changes. Must be generic branding only — never a real letter (HARD RULE, same reasoning as the dummy Showcase).
+- Unit 2: `public/robots.txt` (with `Disallow: /card/`) + `public/sitemap.xml` (4 marketing routes only).
+- Unit 3: per-route `<title>`/description (small `useDocumentTitle` hook — teach it, don't pull in a library).
+- Unit 4: Google Search Console — verify property, submit sitemap. This is what makes brand search work; it is not automatic.
+- Unit 5 (stretch): one real category-content page for "digital birthday card Kenya"-shaped queries.
+- DEFERRED: per-card dynamic OG images (needs a Vercel edge function that renders HTML for crawlers only — a separate session, and it must respect the privacy rule: generic image, never the letter's text).
+
+**BLOCK 2 — Events end-to-end. ORDER INVERTED ON PURPOSE.**
+- First: run the skipped Block-2 verify (build + save a draft).
+- **Unit 5 BEFORE Unit 4.** RLS exposes only `paid AND now() < paid_until`, so building payment first still leaves nothing to look at, and building the reader first makes every draft 404 with two suspects (bad query vs. working policy) and one symptom. Instead: build the reader, then flip `paid=true` + `paid_until` **by hand in the Supabase table editor** to prove the read path in isolation. Unit 4's only job afterwards is to automate a flip already known to work.
+- Then Unit 4 (Paystack, KES 500 × 14-day units), then Unit 6 (manage URL), then 3c preview if time.
+
+**BLOCK 3 — Loop engineering, sequenced: ship safely → learn what shipped → record what we learned.**
+- Loop A (build now): CI via GitHub Actions — `npm run build` + lint on every push, so a broken build never reaches production. Directly serves the CD/CL goal in `AI-Workflow-rules.md`.
+- Loop B (design now, build next): funnel analytics — land → create → pay → share. Must respect the privacy rule: count events, never letter content.
+- Loop C: session ritual enforced by Claude Code hooks — every session opens by reading this tracker and closes by writing it + the build guide.
+
+**BLOCK 4 — SEO build video.** Uses the existing content/video workflow. Scheduled after Block 1 so there's something real to film.
+
+**Honest scoping note:** Blocks 0–4 are 2–3 sessions of work, not one day. If the day runs short, the cut order is: Block 4 (video) → Block 1 Unit 5 (content page) → Block 2 Units 6/3c. Blocks 0, 1 (Units 1–4), and 2 (Units 5+4) are the day's real spine.
+
+## SEO Units 1 + 2 — DONE (Sat 1 Aug, built + build-verified, NOT yet deployed)
+
+**Production host confirmed: `https://scrolly-letters.vercel.app/`.** All absolute URLs now use it.
+
+**Unit 1b — `public/og-image.png`** <span>[CLAUDE]</span>. Source of truth is `tools/og-image.html` (outside `public/`, so Vite never ships it). Colours copied verbatim from `index.css` `:root` `--sl-*`, so the card is on-brand by construction rather than by eye. Design: Mauve Dusk paper ground + blurred purple/rose glows + masked hairline grid; Fraunces gradient headline "Words that *unfold* as you scroll."; a 3-sheet layered card mock with **redacted bars instead of text** — deliberately unreadable so the preview can never imply a real message (HARD RULE). Rendered with headless Chrome:
+`chrome --headless=old --disable-gpu --hide-scrollbars --window-size=1200,630 --virtual-time-budget=9000 --screenshot=public/og-image.png tools/og-image.html`
+**Gotcha: plain `--headless` silently produced no file on Chrome 112+; `--headless=old` is required for `--screenshot`.** Re-run that command after any brand change.
+
+**Unit 2 — `public/robots.txt` + `public/sitemap.xml`** <span>[CLAUDE]</span>.
+
+**CORRECTION — `Disallow: /card/` was planned and then REJECTED.** It would have broken the `noindex` shipped in Unit 1. A crawler must be **allowed to fetch** a page in order to **see** its `X-Robots-Tag` header. Disallowing the path means the crawler never requests it, never sees the noindex — and a disallowed URL discovered elsewhere (someone pastes a card link into a public group) can still be indexed as a bare URL with no content. **`Disallow` and `noindex` defeat each other; pick one, and `noindex` is the one that guarantees removal.** Final `robots.txt` therefore says `Allow: /` with a comment explaining why, and points at the sitemap. Sitemap lists only the 4 public routes.
+
+**Verified:** `npm run build` green (486 modules, 3.77s); `dist/` contains `og-image.png` (205 kB), `robots.txt`, `sitemap.xml`, and `dist/index.html` carries the real hostname in both image tags.
+
+## SEO Unit 1 — detail (1 Aug)
+
+**`index.html`** <span>[typed by USER]</span> — 9 Open Graph + 4 Twitter tags added after `<title>`, before the font `<link>`s. Reviewed and verified correct: `property=` on all OG, `name=` on all Twitter (no crossover — the #1 silent-failure mode), no canonical, no `og:url`, `og:locale` = `en_KE` underscore form.
+
+**`vercel.json`** <span>[applied by CLAUDE, at user request]</span> — added a `headers` block setting `X-Robots-Tag: noindex, nofollow` on `source: "/card/(.*)"`, alongside the existing rewrite.
+
+**Why the header and not a meta tag — the core lesson.** One `<head>` serves all 5 routes, so `<meta name="robots" content="noindex">` would de-index the *entire site*. `X-Robots-Tag` is an HTTP response header, matched **per path** by Vercel before the app is involved. `headers` and `rewrites` are **independent passes**: the rewrite still sends `/card/x` → `index.html` so React Router works, while the header is matched against the URL the *browser asked for*, not the rewritten target. `nofollow` is deliberate — card pages carry outbound WhatsApp share links and event `ticket_url`s, and it stops crawlers walking outward from a private page. **This makes the privacy HARD RULE infrastructure instead of convention** — before today nothing stopped a publicly-posted card URL from being indexed with the letter's full text.
+
+**CORRECTION mid-unit: canonical + `og:url` were REMOVED from the plan before being typed.** A static canonical in an SPA is one claim repeated on all 5 routes — `/create`, `/event`, `/customize` would all declare canonical `/`, and Google's correct response is to drop them as duplicates. An SEO layer whose first act de-indexes 3 of 4 indexable pages. **The sorting rule: does the tag's audience run JS?** `og:*`/`twitter:*` → audience is social crawlers → no JS → MUST be static. `canonical`/`title`/`description` → audience is Google → does run JS → runtime, per route → Unit 3's hook. `og:url` dropped as optional (crawlers fall back to the fetched URL); pinning it wrong on every route is worse than omitting it.
+
+**~~STILL BLOCKING~~ RESOLVED same session** — hostname supplied (`scrolly-letters.vercel.app`) and `og-image.png` built. Both `og:image`/`twitter:image` now resolve.
+
+**Deferred with reason:** per-route `og:*` (so a birthday card previews differently from an event invite) is NOT runtime-solvable — same no-JS reason. Needs a Vercel edge function serving crawler-specific HTML, and it must emit a generic branded image, never letter text.
+
+**Optional/unactioned:** `<html lang="en">` could be `en-KE` for consistency with `og:locale`. Worth ~nothing for ranking.
+
+## SECURITY posture of the SEO layer (resolved 1 Aug — read before Unit 3)
+
+Per `AI-Workflow-rules.md` ("walk me through each security implementation"). Conclusion: **SEO work here is a PRIVACY exercise, not a security one.**
+
+1. **`noindex` is NOT access control.** It keeps card pages out of Google. It does nothing to stop anyone holding the URL from reading the letter — no login, no expiry, no check. What actually protects a card is that its `nanoid` is unguessable. That is a **capability URL**: possession of the link IS the permission (same model as the event `manage_id`). Legitimate and widely used, but it means **a leaked link is a leaked letter, permanently — there is nothing to revoke.**
+2. **What `noindex` did buy (narrow but real):** a card URL posted into a public WhatsApp group can no longer be crawled and surfaced in search results with the message text attached. That was a live exposure before 1 Aug.
+3. **Every SEO control is voluntary compliance.** `robots.txt` / `noindex` / `nofollow` are polite requests that Google and Bing honour and a scraper ignores in one line. **Never treat any of them as a security boundary.**
+4. **`robots.txt` as an anti-pattern:** it is a public file, so `Disallow: /admin/` publishes a map of what you're hiding. Our `Allow: /` correction (made for the noindex reason) also avoids announcing `/card/` as the sensitive namespace — right call, second good reason.
+5. **TWO LIVE RISKS IN UNITS STILL AHEAD:**
+   - **Unit 3 (title hook) — card routes MUST get a GENERIC title.** A title like `"Happy Birthday Dad — Scrolly Letters"` leaks private content into the browser title bar, session history, and any analytics that logs page titles.
+   - **Unit 5 / dynamic OG images** — do NOT use real letters as rankable content, and do NOT render letter text into a per-card preview image (publicly fetchable by URL, unauthenticated, forever). This is why `og-image.png` uses redacted bars.
+
+## Unit 1 concept — the teaching notes (1 Aug)
+
+**The `<head>` has two audiences and only one runs JavaScript.**
+
+| | Human / Googlebot | WhatsApp / LinkedIn / X |
+|---|---|---|
+| fetches `index.html` | ✅ | ✅ |
+| runs `main.jsx` | ✅ | ❌ **stops at `<head>`** |
+| sees React output | everything | nothing |
+
+Consequence: the fix MUST be static HTML in `index.html`. It can never be a React component, and any "SEO for React" library that renders at runtime solves the Google half while silently failing the WhatsApp half. This is the same shape as the two-layer colour system, one level up — a **two-layer rendering system**, where the static shell is the *floor* every visitor is guaranteed.
+
+Tags to add after `<meta name="description">` (line 7): `og:type` · `og:site_name` · `og:title` · `og:description` · `og:image` (+`:width` 1200 / `:height` 630) · `og:url` · `twitter:card=summary_large_image` · `twitter:title` · `twitter:description` · `twitter:image` · `<link rel="canonical">`.
+
+Four points that matter more than the copy-paste:
+1. **OG uses `property=`, Twitter uses `name=`.** OG is built on RDFa. Wrong attribute = tag silently ignored — the same blank-not-error failure mode as the scene `data.*` key mismatches in Block 2.
+2. **`og:image` must be an ABSOLUTE url.** `/og-image.png` will not resolve for crawlers.
+3. **`og:title` should be the emotional hook ("Someone sent you a scrolly letter 💌"), not the brand name.** The recipient doesn't know the brand yet — they know someone sent them something. Brand belongs in `og:site_name`.
+4. **1200×630** is the ratio every platform crops to; anything else gets letterboxed or centre-cropped unpredictably.
+
+Why this ranks first in Block 1: it is not really SEO, it sits directly on the ONLY growth loop — every card ever sold was delivered as a shared link, and every one of those links currently previews as a naked URL.
+
+## Current Goal (historical — Mon 20 Jul)
 
 - Right now its 7pm on Monday 20th July:
 The goals for today is:
