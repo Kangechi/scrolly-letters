@@ -140,6 +140,18 @@ Decisions taken 1 Aug: SEO target = mix of brand + category + share-previews · 
 
 **Optional/unactioned:** `<html lang="en">` could be `en-KE` for consistency with `og:locale`. Worth ~nothing for ranking.
 
+## DEPLOY VERIFIED — live on production (Sat 1 Aug)
+
+User deployed; all 6 post-deploy checks pass against `https://scrolly-letters.vercel.app`:
+1. `/robots.txt` → 200 `text/plain`, `Allow: /` + sitemap pointer
+2. `/sitemap.xml` → 200 `application/xml`, 4 public `<loc>`s
+3. `/og-image.png` → 200 `image/png`, 205,624 bytes
+4. `/card/testcard123` → **`X-Robots-Tag: noindex, nofollow` present** ✓
+5. `/` → **no `x-robots-tag`** ✓ (the pair that proves path-matching works — marketing routes stay indexable)
+6. 13/13 og/twitter tags served with real absolute URLs
+
+**Re-run this check block after any `vercel.json` or `public/` change** — a broken header is invisible in the UI.
+
 ## SECURITY posture of the SEO layer (resolved 1 Aug — read before Unit 3)
 
 Per `AI-Workflow-rules.md` ("walk me through each security implementation"). Conclusion: **SEO work here is a PRIVACY exercise, not a security one.**
