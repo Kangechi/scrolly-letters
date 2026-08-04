@@ -21,6 +21,38 @@ function getBirthdayState(birthdayStr){
     return {state: 'past', daysLate: Math.abs(diffDays)}
 }
 
+/* The `events` table is snake_case; the scene components and this page read
+   camelCase. Same contract mismatch that silently blanked scenes in Unit 3 —
+   a wrong key is `undefined`, never an error. Map at the boundary, once. */
+function normalizeEvent(row) {
+    return {
+        ...row,
+        kind:         'event',
+        eventDate:    row.event_date,
+        landingTitle: row.landing_title,
+        landingSub:   row.landing_sub,
+        ctaLabel:     row.cta_label,
+        ticketUrl:    row.ticket_url,
+        // accent / accent_2 / bg already match what brandStyle reads.
+        // sections is JSONB → already an array.
+    }
+}
+
+/* What to say when there is no row to show. RLS hides drafts and expired
+   events identically to ones that never existed, so the client cannot tell
+   them apart on its own — event_status() (a security definer RPC) reports
+   the state WITHOUT exposing any content.
+
+   DELIBERATE: that RPC only ever reports 'ended'. An ended event was public
+   at some point, so naming it discloses nothing new. A DRAFT has never been
+   public, so it returns zero rows — byte-for-byte identical to an id that was
+   never used. A host wanting to preview their own draft gets that through the
+   `manage_id` secret, not by loosening anything on the public path. */
+const NOT_FOUND_NOTICE = {
+    missing: { emoji: '🫤', title: 'Card not found',      sub: 'This link doesn’t lead anywhere — check it and try again.' },
+    ended:   { emoji: '🕊️', title: 'This event has ended', sub: 'Thanks for the interest — keep an eye out for the next one.' },
+}
+
 function Countdown({ card }) {
     const eventDate = card.eventDate || card.birthday
     const [status, setStatus] = useState(() => getBirthdayState(eventDate))
@@ -70,30 +102,54 @@ export default function CardPage() {
     const [card, setCard] = useState(null)
     const [loading, setLoading] = useState(true)
     const [revealed, setRevealed] = useState(false)
+    const [reason, setReason] = useState('missing')   // why there's no card
 
     useEffect(() => {
         let cancelled = false
         setLoading(true)
         setCard(null)
 
-        // Event letters live in the bundle, not the DB — look locally first.
-        const localEvent = cardData.find(c => c.id === id && c.kind === 'event')
-        if (localEvent) {
-            setCard(localEvent)
-            setLoading(false)
-            return
+        /* Three sources, tried in order. Each step only runs if the one above
+           found nothing, so every existing card behaves exactly as before —
+           the events lookup is purely a new fallback. */
+        async function load() {
+            // 1 · the two demo events, bundled in code rather than the DB
+            const local = cardData.find(c => c.id === id)
+            if (local) return { card: local }
+
+            // 2 · personal cards
+            //     maybeSingle(), NOT single(): single() asks PostgREST to
+            //     coerce the result to one object, so zero rows is a 406
+            //     (PGRST116). Here a miss is an expected outcome we intend to
+            //     fall through on, not an error.
+            const { data: card } = await supabase
+                .from('cards').select('*').eq('id', id).maybeSingle()
+            if (card) return { card: { ...card, kind: 'card' } }
+
+            // 3 · self-serve events. RLS already restricts this to
+            //     `paid AND now() < paid_until`, so a row coming back here is
+            //     live by definition — no extra check needed on the client.
+            const { data: ev } = await supabase
+                .from('events').select('*').eq('id', id).maybeSingle()
+            if (ev) return { card: normalizeEvent(ev) }
+
+            // 4 · nothing visible. Ask the DB to characterise the absence.
+            //     Wrapped so this still works before the RPC exists.
+            try {
+                const { data: status } = await supabase.rpc('event_status', { p_id: id })
+                const state = Array.isArray(status) ? status[0]?.state : status?.state
+                if (state) return { card: null, reason: state }
+            } catch { /* RPC not deployed yet — fall through to generic */ }
+
+            return { card: null, reason: 'missing' }
         }
 
-        supabase
-            .from('cards')
-            .select('*')
-            .eq('id', id)
-            .single()
-            .then(({ data, error }) => {
-                if (cancelled) return
-                setCard(error ? null : data)
-                setLoading(false)
-            })
+        load().then(({ card, reason }) => {
+            if (cancelled) return
+            setCard(card ?? null)
+            setReason(reason ?? 'missing')
+            setLoading(false)
+        })
 
         return () => { cancelled = true }
     }, [id])
@@ -133,7 +189,19 @@ export default function CardPage() {
   }
 
     if (loading) return <div className="landing"><p className="landing-sub">Loading your card…</p></div>
-    if (!card) return <div className="landing"><p className="landing-sub">Card not Found 🫤</p></div>
+
+    if (!card) {
+        const notice = NOT_FOUND_NOTICE[reason] || NOT_FOUND_NOTICE.missing
+        return (
+            <div className="landing">
+                <div className="landing-inner">
+                    <span className="landing-emoji">{notice.emoji}</span>
+                    <h2 className="landing-title">{notice.title}</h2>
+                    <p className="landing-sub">{notice.sub}</p>
+                </div>
+            </div>
+        )
+    }
 
     if (!revealed) {
         const isEvent = card.kind === 'event'

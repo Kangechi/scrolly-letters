@@ -152,7 +152,10 @@ User deployed; all 6 post-deploy checks pass against `https://scrolly-letters.ve
 
 **Re-run this check block after any `vercel.json` or `public/` change** — a broken header is invisible in the UI.
 
-## SEO Unit 3 — DONE (Sat 1 Aug, built + measured, awaiting deploy)
+## SEO Unit 3 — DONE + DEPLOYED + VERIFIED IN PRODUCTION (Sat 1 Aug)
+
+Post-deploy check against live `https://scrolly-letters.vercel.app` via `chrome --headless=old --dump-dom`: `/` → own title + `canonical /`; `/create` → own title + `canonical /create`; `/card/*` → generic `'A Scrolly Letter ✦'` + **no canonical**. Static HTML still serves `og:title`/`og:description` for no-JS crawlers. All correct.
+
 
 **New file `src/components/PageMeta.jsx`; wired into `App.jsx`** next to `<BubbleNav/>` inside `<BrowserRouter>`. `npm run build` green, 487 modules.
 
@@ -172,6 +175,37 @@ User deployed; all 6 post-deploy checks pass against `https://scrolly-letters.ve
 - Re-verified all 5 routes: exactly one `<title>`, one `description`, canonical on the 4 public routes only, `/card/*` generic with no canonical. ✓
 - **LESSON: when two systems write to the same place, measure — don't reason about which wins. A duplicate tag throws no error and looks fine in the browser.**
 
+## SEO Unit 5 — DONE (Sat 1 Aug) — SEO TRACK COMPLETE
+
+**New page `src/pages/Occasions.jsx` at `/occasions`.** Stage 6 was the last gap: four public routes with flawless metadata and almost no words, and Google ranks words. Six occasions with real prose + 4 FAQs + `FAQPage` JSON-LD. Zero Supabase calls, every example invented (HARD RULE). Every claim verified true of the shipped product — no invented behaviour, no prices not in the code.
+
+Files: `pages/Occasions.jsx` (new) · `App.jsx` (route) · `components/PageMeta.jsx` (title/desc/canonical) · `public/sitemap.xml` (5th URL, priority 0.9) · `pages/Home.jsx` (**internal link** "See every occasion →") · `index.css` (`.occ-*` long-form layout). `npm run build` green, 488 modules; lint clean for today's files (17 pre-existing errors elsewhere, e.g. `Customize.jsx` unused `BASE_PRICE`).
+
+**Why the internal link matters:** a page nothing links to is weakly discovered however good its metadata. Sitemap says "this exists"; an internal link says "and it matters." Need both.
+
+**BUG CAUGHT BY MEASUREMENT — nearly shipped.** The page first reused `Home.jsx`'s framer-motion `Reveal` (`whileInView`, `initial={{opacity:0}}`). Headless render showed **13 × `style="opacity: 0; transform: translateY(40px)"`** — every word in the DOM, none visible, because the IntersectionObserver never fired. **Fix: a CSS animation that animates TRANSFORM ONLY, never opacity, and runs on load rather than on an observer** (`.occ-reveal` + `@keyframes occ-rise`, `prefers-reduced-motion` respected). Re-verified: 0 inline `opacity: 0`, 13 wrappers, all content present.
+**RULE: never gate content you need indexed behind an animation that must be triggered.** Home can afford it (showcase); a content page cannot.
+
+**JSON-LD is generated FROM the same `FAQ` array the page renders**, so markup can never drift from visible text — marking up answers not on the page is a manual-action risk, and one source makes drift structurally impossible.
+
+**Open inconsistency noticed, NOT resolved (needs user decision):** `Home.jsx` Pricing shows event pricing as "KES 500 monthly", but Event Spec v1 item 7 says **KES 500 per 14-day unit**. These contradict. `/occasions` deliberately avoids stating event pricing until this is settled.
+
+## NEXT UP — Events track (user-set priority, restated end of Sat 1 Aug as THREE tasks)
+
+**0. CARRIED OVER FROM SEO — do first, ~10 min.** Unit 5 was built but **NEVER DEPLOYED**. Uncommitted at end of session: `src/pages/Occasions.jsx` (new) + `App.jsx`, `components/PageMeta.jsx`, `public/sitemap.xml`, `src/index.css`, `src/pages/Home.jsx`, this tracker. **Commit + push, then submit `sitemap.xml` in Search Console + Request Indexing.**
+> Gotcha logged: curling a URL to confirm a deploy is USELESS here — the catch-all rewrite in `vercel.json` returns 200 for *every* path, including typos. Verify by checking the **sitemap's contents** (`curl -s .../sitemap.xml | grep -c occasions`), not a status code.
+
+Sequenced deliberately; each is only testable once the one above exists.
+1. **Fix the event error + explain the two-URL routing in the same block** (user merged these — the routing model is what the fix is built on). The 406 / "Card not Found" on a saved event draft, see BUG section below. **Build the READER first, test by flipping `paid`/`paid_until` by hand in the Supabase table editor** — payment-first leaves nothing to look at; reader-first without the manual flip gives two suspects and one symptom. The routing model to walk through: public `id` (nanoid 6) = invite/share URL · secret `manage_id` (nanoid 21) = edit + feedback. Two capabilities on one row; **the length gap IS the security logic.**
+2. **Payment routing for events** — Paystack, KES 500 × 14-day units, flips `paid` + `paid_until`. Only meaningful once #1 proves the read path; then it just automates a flip already known to work.
+3. **Live build** — the live preview beside the event builder form (Unit 3c). Same render path as #1: build once, use twice.
+4. **August seasonal overlay video** — FLAGGED 1 Aug, user explicitly said *"you won't create it, you'll just flag it as something for tomorrow."* Concept in their words: *"It's August — if you know it's someone's birthday / if you know it's an anniversary / if you're hosting an event / whatever it may be."* Scenario beats → Scrolly Letters as the answer → CTA. A **transparent overlay the user composites over their own talking-head footage.**
+   - **Do NOT scaffold from scratch.** Near-identical sibling exists: `C:\Users\ADMIN\Desktop\Video_Contnet\videos\scrolly-rebuild-overlay\` — 9:16 (1080×1920), transparent, `workflow: general-video`, `flow: companion`, pinned `hyperframes@0.7.70`. Its `design.md` already holds the brand truth: Mauve Dusk tokens, Fraunces + Inter as data-URI `@font-face` (**no font CDN survives a cloud render**), rise-40px + fade at `cubic-bezier(.22,1,.36,1)`, and **~0.5s fully-transparent gaps between beats so the speaker breathes through**.
+   - **Open question:** the real handle / CTA text — the sibling brief still carries `scrolly.letters` as a PLACEHOLDER. Confirm before rendering either video.
+   - Route via the `/hyperframes` entry point first.
+
+**Settle before #2:** the "KES 500 monthly" (Home Pricing) vs "KES 500 per 14 days" (Event Spec v1) contradiction.
+
 ## Google Search Console (Sat 1 Aug)
 
 **Verification file `public/google56de0d6e543050aa.html` committed (`425b10e`), pushed, confirmed serving 200.** Must be a **URL-prefix** property, NOT a Domain property — the latter needs a DNS TXT record on `vercel.app`, which Vercel owns. **Deleting that file un-verifies the property.**
@@ -180,7 +214,96 @@ User deployed; all 6 post-deploy checks pass against `https://scrolly-letters.ve
 
 **REMAINING USER ACTION:** Sitemaps → submit `sitemap.xml`; URL Inspection → homepage → Request Indexing. **Expect Coverage to later show card pages as "Excluded by 'noindex' tag" — that is SUCCESS, not an error.**
 
-## BUG (diagnosed 1 Aug, NOT yet fixed) — event draft shows "Card not Found 🫤" + 406
+## ✅ PRICING RESOLVED (Sun 2 Aug): **KES 500 per 14 days**, bought in units. NOT monthly.
+
+Long-open contradiction closed by user decision. "Monthly" was not a copy discrepancy — it was **a different product**: variable duration (28–31 days), a rate that changes by month, ambiguous extension semantics, calendar-maths edge cases, and it implies a **subscription that recurs and can be cancelled** — which no code performs. An event is bought once for a window and then ends.
+
+**Own build guide:** `scrolly-letters-payment-build-guide.html` → artifact https://claude.ai/code/artifact/9ee8ca64-1e66-41b8-bda9-933b90b75f76 (3 micro-worlds: unit calculator, trust boundary, webhook replay). The payment map was REMOVED from the events guide, which now points at it.
+
+**CASCADE — every surface, found by grep. Three kinds, failing differently: copy that lies makes an angry customer; money that lies makes a loss nobody notices.**
+| Where | Kind | Now | Must become |
+|---|---|---|---|
+| `Home.jsx:217` | copy | `KES 500 monthly / card` | `KES 500 / 14 days` — **wrong on BOTH halves**; the noun is *event*, not card |
+| `Home.jsx:220` | copy | `<Link to="/create">` on the *For Events* price card | `/event` — **funnel bug: it sends event hosts to the personal card builder** |
+| `ManageEvent.jsx:251` | copy | "live for 14 days" | already correct ✓ |
+| `api/pay.js` | money | hardcoded `amount: 5000` | `units × UNIT_PRICE_KOBO`, server-side |
+| `api/callback.js` | money | sets `cards.paid` only | also `events.paid` + `paid_until` |
+| `events` table | money | no payment reference | `payment_ref` + partial unique index |
+| Spec v1 item 7 | truth | listed as open | settled |
+
+**ONE CONSTANT, ONE SOURCE:** define `UNIT_PRICE_KOBO` + `UNIT_DAYS` once in `api/pay.js`. The price living in two places is exactly how "monthly" on the landing page and "14 days" in the spec drifted apart.
+
+**Explicitly NOT in scope (decide before they happen, not after):** refunds (no flow, no policy) · renewal reminders (an event dies silently at `paid_until`; needs a scheduled job) · ticket money (unchanged — `ticket_url` links out, which is what keeps us out of being a marketplace) · real receipts (Paystack emails the synthetic `<id>@scrolly-letters.app`, which nobody reads).
+
+## PAYMENT ROUTING — MAPPED (Sun 2 Aug), to build next session
+
+Not a new payment system: `api/pay.js` + `api/callback.js` already do Paystack charges, HMAC verification and a service-role write. The work is a second **kind** of thing to charge for, plus four trust decisions.
+
+**Flow:** `/manage/:manage_id` (host picks units × 14 days + phone) → `POST /api/pay {manageId, units, phone}` → server resolves the event **by manage_id**, clamps units, computes `amount = units × 50000` → Paystack charge with `metadata {kind:'event', eventId, units}` → STK push → webhook verifies HMAC + amount + idempotency → `paid_until = MAX(now, existing paid_until) + units×14d`, `paid = true` → manage page polls `get_event_for_manage` until `paid`, badge flips to LIVE.
+
+**THE FOUR DECISIONS (each failure is silent and looks like success):**
+1. **Client never sends an amount** — it sends `units`, the server multiplies. Otherwise someone pays KES 1 for a year and it logs as a normal successful payment.
+2. **Pay is keyed on `manage_id`, NOT the public `id`** — the server resolves the event itself. A client-supplied event id would let anyone trigger a charge against any event; paying should need the same authorisation as editing.
+3. **Idempotency on the Paystack reference** — webhooks retry. A resend extends `paid_until` twice = free hosting, with no failed request anywhere.
+4. **Extend from `MAX(now, paid_until)`, not `now`** — otherwise topping up a live event burns the time remaining on it.
+
+**The webhook stays the ONLY writer** of `paid`/`paid_until` — it's the sole place that knows money moved, and runs with the service-role key. `update_event` was deliberately built so it *cannot* touch those columns.
+
+**Lands in:** `api/pay.js` (accept `kind`; card path untouched) · `api/callback.js` (branch on `metadata.kind`) · DB (`payment_ref` column, or reuse the old Daraja `payments` table) · `ManageEvent.jsx` (duration picker + phone, real button, poll).
+
+**STILL BLOCKING:** "KES 500 **monthly**" (Home Pricing) vs "KES 500 per **14 days**" (Event Spec v1). Decide before writing the multiplier — changing it later means migrating anyone already paid.
+
+## PREVIEW SIZING + MOBILE (Sun 2 Aug)
+
+First attempt boxed the preview into 340×520. Wrong diagnosis: `.card-wrapper.preview-frame` is built for a full-height column (`height: calc(100vh - 4rem)`), so that wasn't a small preview — it was a **squeezed slice** of the card. Two components were competing to own sizing; the outer `.manage-preview` now owns it (`position:static; height:100%; border:0` reset on the inner frame) and the card fills it. Desktop is now a **two-column sticky layout** matching the create page.
+
+**Mobile — the real problem is a scrollable frame inside a scrolling page** (swipe and sometimes the card moves, sometimes the page does):
+- `overscroll-behavior: contain` — stops scroll **chaining** when the inner frame hits its end.
+- **Tap-to-expand full-screen preview** — the frame becomes the viewport, so a swipe can only mean one thing. Inline frame drops to a 48dvh thumbnail you tap.
+- **`dvh` not `vh`** — mobile browser chrome shrinks the visible area; `vh` pushes the close button off-screen.
+- `env(safe-area-inset-top)` for the notch · 44px min tap targets · Escape to close · `document.body.overflow` locked while open.
+
+## MANAGE PAGE + flow rework (Sun 2 Aug) — host can finally see their own draft
+
+**The gap found by the user:** *"So wait no one can see their drafts?"* — correct, and that included the HOST. The app only ever talks to Supabase with the anon key, and RLS applies the same policy to every anon request; nothing in the request proves authorship. Net effect: **a host was being asked to pay KES 500 for an event they had never seen.** The `manage_id` was the missing proof; it just had nowhere to be checked.
+
+**⚠️ DOCUMENTATION ERROR CORRECTED: `update_event` NEVER EXISTED.** This tracker recorded it as built in Block 1. Introspection (`pg_get_function_arguments` over `pg_proc`) returned only `event_status(p_id text)` and `get_event_feedback(p_manage_id text)`. It was designed, not deployed. **Lesson: an RPC written into a doc is not an RPC in the database — verify before depending on it.**
+
+**Two SQL functions written this session (user to run):**
+- `get_event_for_manage(p_manage_id text) returns setof public.events` — full row, gated on the 21-char secret. **`returns setof events` is correct HERE** (unlike on the public `id`) because possession of `manage_id` already authorises editing; a preview is strictly less power.
+- `update_event(p_manage_id text, p_patch jsonb) returns boolean` — **editable columns listed EXPLICITLY** (`host`, `landing_title`, `landing_sub`, `cta_label`, `ticket_url`, `event_date`). `paid`/`paid_until`/`id`/`manage_id` are absent *by construction*, so no patch can reach them — that is the enforcement, not a check someone could later forget. `event_date` needs the `?` key-exists test because `''::date` throws where `coalesce` suffices for text. Returns `false` when no row matched, so a save that changed nothing says so.
+
+**ROUTING BUG — had TWO layers.** `Create_event.jsx:149` linked to `/event/manage/<id>`, but no such route existed (`/event` matches exactly). **And there was no catch-all**, so React Router rendered *nothing* — a blank page, no console error. That is why it presented as "the page doesn't do anything" rather than 404. Fixed both: real `/manage/:manageId` route **and** `<Route path='*' element={<NotFound/>}/>`.
+
+**Flow reworked (user's call):** saving a draft no longer shows two raw URLs — one of which (the invite link) *cannot work* because RLS hides an unpaid draft, so the first thing a host did was click a dead link. It now `navigate(..., {replace: true})`s to `/manage/:manage_id` = **preview → edit → pay to publish → (later) feedback.**
+
+**Files:** `pages/ManageEvent.jsx` (new) · `pages/NotFound.jsx` (new) · `App.jsx` (route + catch-all) · `Create_event.jsx` (navigate on save; two-link panel deleted) · `components/CreatePreview.jsx` (new optional `brandStyle` prop — drops the `theme-x` class when present, since class and inline vars are alternative sources for the same `--accent`/`--bg` and would fight) · `index.css` (`.manage-*`) · `vercel.json`. Build green 490 modules, lint clean on all new files.
+
+**`vercel.json` now also sets `Referrer-Policy: no-referrer` on `/manage/(.*)`** alongside noindex. **Reason: the manage URL contains a secret.** Without it, clicking any outbound link from that page (e.g. the org's own `ticket_url`) sends the full URL — secret included — to that site in the `Referer` header. **That is how capability URLs leak in practice.**
+
+**Deliberately inert:** the "Pay to publish" button is disabled rather than hidden, so the flow reads correctly before payment exists (tomorrow).
+
+## BUG FIX — the 406 (Sun 2 Aug): diagnosed by pre-flight, then fixed
+
+**PRE-FLIGHT FIRST (curl against live Supabase with the anon key) — evidence, not assumption:**
+- `GET /rest/v1/events?select=id&limit=5` → **`200 []`**. Table reachable, RLS present and filtering, draft correctly invisible.
+- Same query with `Accept: application/vnd.pgrst.object+json` (what `.single()` sends) → **`406 PGRST116 "The result contains 0 rows / Cannot coerce the result to a single JSON object"`** — *exactly* the console error. The 406 is PostgREST refusing to coerce 0 rows into one object; it is NOT a network or permission failure.
+- Same query with a plain `Accept` → **`200 []`**, no error.
+
+**CAUSE 1 FIX — `CardPage.jsx` loader rewritten** as an async `load()` with three ordered sources, each running only if the previous missed, so every existing card behaves exactly as before and events are a pure fallback: local bundle (2 demos) → `cards` → `events`. **`maybeSingle()` replaces `single()`** — the one-word fix; a miss here is an expected fall-through, not an error. Added `normalizeEvent()` mapping snake_case columns → the camelCase the scenes read (`event_date→eventDate`, `landing_title→landingTitle`, `landing_sub→landingSub`, `cta_label→ctaLabel`, `ticket_url→ticketUrl`); `accent`/`accent_2`/`bg` already match `brandStyle`, `sections` is JSONB so already an array.
+
+**CAUSE 2 — NOT a bug; the RLS policy is correct.** It hides drafts and expired events *identically to nonexistent ones*, which is right but illegible. Fixed with a `security definer` RPC `event_status(p_id)` that reports state **without returning any content**.
+
+**SECURITY DECISION (user pushed back — "I don't want to make that security tradeoff"). Resolved to the ENDED-ONLY variant.** The RPC now returns `'ended'` and nothing else; an unpublished draft returns **zero rows, byte-for-byte identical to an id that was never used** — so there is NO new disclosure at all. Rationale: an ended event was public at some point, so naming it reveals nothing new; a draft has never been public. Cost accepted: the host opening their own draft's invite URL sees generic "Card not found" — the right fix for that is a host preview via the 21-char `manage_id` secret on the `/manage/` route, NOT loosening the public path.
+
+**Why the RPC is not a vulnerability (three structural guards — check these in ANY `security definer` function):**
+1. **`returns table (state text)` is the ceiling** — it can emit one word; card columns have no path out. ⚠️ `returns setof events` would hand back whole rows and bypass RLS entirely. That one line is the difference between a status probe and a hole through RLS.
+2. **No injection surface** — `language sql` with a bound `where e.id = p_id`. No `execute`, no string concatenation, no dynamic SQL.
+3. **`set search_path = public` is pinned** — blocks the classic `security definer` hijack where an attacker creates a same-named object earlier on the path and the elevated function calls theirs.
+
+**Also NOT our bugs (browser-extension noise):** `document-start.js … Could not establish connection` ×2, `[Violation] 'visibilitychange' handler took 158ms`. Reproduce in incognito and they vanish.
+
+## BUG (original diagnosis 1 Aug) — event draft shows "Card not Found 🫤" + 406
 
 **Symptom:** loading a saved event's invite URL shows the defensive "Card not Found" branch; console shows `Failed to load resource: 406`.
 

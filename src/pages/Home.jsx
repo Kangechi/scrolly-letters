@@ -175,6 +175,9 @@ function OccasionsEvents() {
             a little card for every moment worth saying something.
           </p>
           <Link to="/create" className="cta-button">Create a card →</Link>
+          {/* Internal link into the /occasions content page. A page nothing
+              links to is weakly discovered, however good its metadata is. */}
+          <Link to="/occasions" className="split-link">See every occasion →</Link>
         </Reveal>
         <Reveal className="split-panel split-panel--event" delay={0.12}>
           <span className="split-emoji">🎉</span>

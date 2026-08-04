@@ -45,6 +45,11 @@ const PAGE_META = {
     description:
       'Go beyond the templates — pick your own backdrop, colours and scenes to build a card that looks like nobody else’s.',
   },
+  '/occasions': {
+    title: 'Birthday, thank-you and anniversary cards you send as a link · Scrolly Letters',
+    description:
+      'What to send and when — birthday cards, anniversary letters, thank-yous, apologies and encouragement, sent as a link that unfolds as they scroll. KES 50, no app needed.',
+  },
 }
 
 /* Card pages. Deliberately generic: the title must NEVER contain the

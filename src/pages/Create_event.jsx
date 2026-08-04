@@ -1,5 +1,5 @@
 import { useState, useReducer } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { nanoid } from 'nanoid'
 import { supabase } from '../lib/supabase'
 
@@ -90,7 +90,7 @@ export default function CreateEvent() {
   const [state, dispatch] = useReducer(reducer, initialForm)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
-  const [created, setCreated] = useState(null)   // { id, manage_id } after save
+  const navigate = useNavigate()
 
   const sections = buildEventSections(state)
 
@@ -129,28 +129,12 @@ export default function CreateEvent() {
       setError(error.message)
       return
     }
-    setCreated({ id, manage_id })   // show the two links (Unit 4 pays first)
-  }
-
-  // ── After a successful draft save: show the two capability URLs ──
-  if (created) {
-    const origin = window.location.origin
-    return (
-      <div className="shop-page" style={{ justifyContent: 'flex-start' }}>
-        <span className="shop-page-emoji">✅</span>
-        <h1 className="shop-page-title">Draft saved</h1>
-        <p className="shop-page-sub">
-          Payment (KES 500) comes next — until then this event is a private draft.
-        </p>
-        <div className="create-card" style={{ maxWidth: 480, width: '100%' }}>
-          <label className="scene-label">Public invite link</label>
-          <input className="create-input" readOnly value={`${origin}/card/${created.id}`} />
-          <label className="scene-label">Secret manage link (keep this private)</label>
-          <input className="create-input" readOnly value={`${origin}/event/manage/${created.manage_id}`} />
-        </div>
-        <Link to="/" className="cta-button">Back home</Link>
-      </div>
-    )
+    /* Straight to the host's page instead of showing two raw URLs.
+       The old panel handed over an invite link that CANNOT work yet — RLS
+       hides an unpaid draft — so the first thing a host did was click a
+       dead link. Now they land on the thing they actually need next:
+       preview → edit → pay to publish. */
+    navigate(`/manage/${manage_id}`, { replace: true })
   }
 
   return (

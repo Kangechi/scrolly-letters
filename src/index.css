@@ -1439,9 +1439,308 @@ to { opacity: 1; transform: translateY(0);}
 .sl-footer-links a:hover { text-decoration: underline; }
 .sl-footer-fine { font-family: var(--font-serif); font-size: 0.85rem; color: var(--sl-muted); }
 
+/* ── Manage event page (host's capability-URL page) ──────────────── */
+.manage-page { gap: 1rem; padding-bottom: 5rem; }
+.manage-badge {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+}
+/* State is encoded in colour AND wording — a badge that only changes hue
+   is unreadable to anyone who can't distinguish the hues. */
+.manage-badge--draft { background: var(--sl-purple-soft); color: var(--sl-purple); }
+.manage-badge--live  { background: #dcf5e6; color: #1f7a4d; }
+.manage-badge--ended { background: #f0e6e8; color: #8c6470; }
+
+/* Desktop: preview beside the controls — same split as the create page.
+   `align-items: start` lets the preview column stick while the right column
+   scrolls past it. */
+.manage-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: start;
+  width: 100%;
+  max-width: 1180px;
+  margin: 1.5rem auto 0;
+  text-align: left;
+}
+.manage-col { display: flex; flex-direction: column; }
+
+.manage-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 2rem;
+}
+.manage-layout .manage-block { align-items: stretch; margin-top: 0; }
+.manage-layout .manage-col .manage-block + .manage-block { margin-top: 2.5rem; }
+.manage-block--preview { position: sticky; top: 6.5rem; }
+.manage-card { max-width: none; width: 100%; }
+
+.manage-h {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--sl-ink);
+  margin: 0;
+}
+
+/* Full-height frame, not a thumbnail. `.card-wrapper.preview-frame` is built
+   for a tall column (height: calc(100vh - 4rem)); boxing it into a small tile
+   showed a squeezed slice of the card rather than the card. Height is capped
+   below the viewport so the sticky column never outgrows the screen. */
+.manage-preview {
+  width: 100%;
+  height: min(78vh, 860px);
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--sl-border);
+  background: var(--sl-surface);
+  box-shadow:
+    0 2px 4px rgba(38, 25, 46, 0.05),
+    0 18px 44px rgba(107, 78, 158, 0.16);
+}
+/* Neutralise the sticky/height rules the create page sets on the same class —
+   here the OUTER frame owns the size and the inner card just fills it. */
+.manage-preview .card-wrapper.preview-frame {
+  position: static;
+  top: auto;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  overflow-y: auto;
+  /* Stops scroll CHAINING: when the inner frame reaches its end, the page
+     behind it must NOT take over the gesture. Without this, one long swipe
+     scrolls the card and then silently starts scrolling the whole page. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.manage-note--hint { font-size: 0.82rem; margin: 0; text-align: center; }
+
+.manage-expand {
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--sl-purple);
+  background: var(--sl-purple-soft);
+  border: 0;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  align-self: center;
+  /* 44px min target — a link-sized tap area is the other half of "bad on phone". */
+  min-height: 44px;
+}
+.manage-expand:hover { background: color-mix(in srgb, var(--sl-purple) 22%, transparent); }
+.manage-expand:focus-visible { outline: 2px solid var(--sl-purple); outline-offset: 2px; }
+
+/* Full-screen preview — the frame becomes the viewport, so a swipe can only
+   mean one thing. dvh (not vh) because mobile browser chrome shrinks the
+   visible area as you scroll; vh would leave the close button off-screen. */
+.manage-fullpreview {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--sl-ink);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.manage-fullpreview .card-wrapper.preview-frame {
+  position: static;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.manage-fullpreview-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));   /* clears the notch */
+  right: 1rem;
+  z-index: 91;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--sl-ink);
+  background: var(--sl-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  min-height: 44px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(38, 25, 46, 0.25);
+}
+.manage-fullpreview-close:focus-visible { outline: 2px solid var(--sl-purple); outline-offset: 2px; }
+
+.manage-notice {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  color: var(--sl-purple);
+  margin: 0.5rem 0 0;
+}
+.manage-notice--bad { color: #b3384a; }
+.manage-note {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--sl-muted);
+  max-width: 44ch;
+  margin: 0 0 0.5rem;
+  text-align: center;
+}
+.manage-note--keep { margin-top: 2.5rem; }
+.manage-page .cta-button[disabled] { opacity: 0.5; cursor: not-allowed; }
+/* The page is a workspace, not a centred hero — let it start at the top and
+   use the width. .shop-page centres and pads for single-column pages. */
+.manage-page { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }
+
+@media (max-width: 900px) {
+  .manage-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 520px;
+  }
+  /* Sticky in one column would pin the preview over the form as you scroll. */
+  .manage-block--preview { position: static; }
+  .manage-layout .manage-block { margin-top: 2.5rem; }
+}
+
+@media (max-width: 620px) {
+  /* Shorter inline frame on a phone: it now reads as a THUMBNAIL you tap to
+     open, not a thing you're meant to read by scrolling inside. The full
+     preview is the real reading experience. dvh keeps it honest as the
+     browser's address bar grows and shrinks. */
+  .manage-preview { height: 48vh; height: 48dvh; }
+  .manage-page { padding-left: 1rem; padding-right: 1rem; padding-top: 5rem; }
+  .manage-layout { margin-top: 1rem; }
+  .manage-layout .manage-block { margin-top: 2rem; }
+  .manage-layout .manage-col .manage-block + .manage-block { margin-top: 2rem; }
+  .manage-note, .manage-note--hint { max-width: 100%; }
+  /* Full-width tap targets beat centred pills on a narrow screen. */
+  .manage-expand { width: 100%; }
+}
+
+/* ── Occasions content page (SEO Unit 5) ───────────────────────────
+   Reuses the .sl-landing surface and .sl-section rhythm; only the
+   long-form reading layout is new. Prose is set in the serif face at a
+   comfortable measure — this page exists to be READ, not scanned.       */
+.split-link {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--sl-purple);
+  text-decoration: none;
+}
+.split-link:hover { text-decoration: underline; }
+
+/* The reveal for THIS page animates transform only — never opacity — so the
+   text is legible at every frame including frame zero. Runs on load, not on
+   an IntersectionObserver, so it completes with or without scrolling. */
+.occ-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: occ-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes occ-rise {
+  from { transform: translateY(14px); }
+  to   { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .occ-reveal { animation: none; }
+}
+
+.occ-page-intro .sl-section-note { max-width: 52ch; }
+
+.occ-page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  width: 100%;
+  max-width: 680px;
+  text-align: left;
+}
+.occ-page-item {
+  display: flex;
+  flex-direction: row;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.occ-page-emoji { font-size: 2rem; line-height: 1.2; flex: 0 0 auto; }
+.occ-page-copy  { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.occ-page-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--sl-ink);
+  margin: 0;
+}
+.occ-page-lead {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--sl-purple);
+  margin: 0;
+}
+.occ-page-body {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--sl-muted);
+  max-width: 62ch;
+  margin: 0;
+}
+.occ-page-link {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--sl-purple);
+  text-decoration: none;
+  align-self: flex-start;
+}
+.occ-page-link:hover { text-decoration: underline; }
+
+.occ-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  width: 100%;
+  max-width: 680px;
+  text-align: left;
+}
+.occ-faq-item {
+  align-items: flex-start;
+  gap: 0.4rem;
+  border-top: 1px solid var(--sl-border);
+  padding-top: 1.25rem;
+}
+.occ-faq-q {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--sl-ink);
+  margin: 0 0 0.4rem;
+}
+.occ-faq-a {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--sl-muted);
+  max-width: 62ch;
+  margin: 0;
+}
+
 @media (max-width: 680px) {
   .how-grid { grid-template-columns: 1fr; max-width: 380px; }
   .split-grid, .price-grid { grid-template-columns: 1fr; max-width: 380px; }
+  .occ-page-item { flex-direction: column; gap: 0.75rem; }
 }
 
 /* ================================

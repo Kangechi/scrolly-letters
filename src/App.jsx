@@ -4,6 +4,9 @@ import CardPage from './pages/CardPage'
 import Create from './pages/Create'
 import CreateEvent from './pages/Create_event'
 import Customize from './pages/Customize'
+import Occasions from './pages/Occasions'
+import ManageEvent from './pages/ManageEvent'
+import NotFound from './pages/NotFound'
 import BubbleNav from './components/BubbleNav'
 import PageMeta from './components/PageMeta'
 
@@ -18,6 +21,12 @@ export default function App() {
       <Route path='/create' element={<Create/>}/>
       <Route path='/event' element={<CreateEvent/>}/>
       <Route path='/customize' element={<Customize/>}/>
+      <Route path='/occasions' element={<Occasions/>}/>
+      {/* Host's page, reached by the SECRET manage_id (not the invite id). */}
+      <Route path='/manage/:manageId' element={<ManageEvent/>}/>
+      {/* Catch-all. Without this an unmatched URL renders a BLANK page —
+          which is exactly how the dead /event/manage/... link failed. */}
+      <Route path='*' element={<NotFound/>}/>
     </Routes>
 
 
