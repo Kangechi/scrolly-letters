@@ -18,4 +18,11 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    /* /api is Vercel serverless — Node, not a browser. Without this, every
+       `process.env` read lints as an undefined global, which is 6 permanent
+       false positives sitting on top of the two files that handle money. */
+    files: ['api/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
 ])

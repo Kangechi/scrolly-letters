@@ -2,41 +2,26 @@ import { useState, useReducer } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { nanoid } from 'nanoid'
 import { supabase } from '../lib/supabase'
+import {
+  EVENT_EMOJIS,
+  EMPTY_EVENT_FORM,
+  buildEventSections,
+  formToColumns,
+} from '../lib/eventSections'
 
 /* ============================================================
    CREATE EVENT — self-serve event builder.
-   Flow: fill form → assemble scenes → (Unit 4) pay KES 500 → publish.
+   Flow: fill form → assemble scenes → pay KES 200 / 14 days → publish.
    Storage: the Supabase `events` table (NOT the local bundle — that
    holds only the two demo events). Two capabilities per event:
      • id        (nanoid 6)  → public invite URL
      • manage_id (nanoid 21) → secret edit + feedback URL
+
+   The form shape, the scene builder and the column mapping all now live in
+   `lib/eventSections.js` — because the MANAGE page needs the exact same
+   three, and a second copy of them is how `ticket_url` and the CTA baked
+   into `sections` drifted apart in the first place.
    ============================================================ */
-
-const EVENT_EMOJIS = ['🎉', '🎟️', '♟️', '🤖', '🎤', '🥂', '📅', '✨', '🔥', '💡']
-
-const initialForm = {
-  // identity + branding
-  host: '',
-  emoji: '🎉',
-  accent: '#4C86C6',
-  accent_2: '#E9B824',
-  bg: '#0A3A6B',
-
-  // landing screen
-  eventDate: '',
-  landingTitle: 'You’re invited',
-  landingSub: '',
-  ctaLabel: 'Get your ticket →',
-  ticketUrl: '',
-
-  // scene text
-  heroHeadline: '',
-  heroSub: '',
-  expectedText: '',
-  missText: '',
-  detailsText: '',
-  questionsPrompt: 'Anything you want to know before the day?',
-}
 
 function reducer(state, action) {
   switch (action.type) {
@@ -47,47 +32,8 @@ function reducer(state, action) {
   }
 }
 
-/* Turn the flat form state into the scenes[] array CardPage will render.
-   Each object's keys MUST match what its scene component reads:
-     hero     → headline, sub
-     who      → headline, text
-     message  → sub, text
-     memory   → label, text
-     feedback → label, prompt, cta{label, href}
-   Optional middle scenes drop out when left blank (.filter(Boolean)). */
-function buildEventSections(state) {
-  return [
-    {
-      type: 'hero',
-      headline: state.heroHeadline,
-      sub: state.heroSub,
-    },
-    state.expectedText && {
-      type: 'who',
-      headline: 'What to expect',
-      text: state.expectedText,
-    },
-    state.missText && {
-      type: 'message',
-      sub: 'Why you shouldn’t miss it',
-      text: state.missText,
-    },
-    state.detailsText && {
-      type: 'memory',
-      label: 'Details about the event',
-      text: state.detailsText,
-    },
-    {
-      type: 'feedback',
-      label: 'Questions for the host?',
-      prompt: state.questionsPrompt,
-      cta: { label: state.ctaLabel, href: state.ticketUrl || '#' },
-    },
-  ].filter(Boolean)
-}
-
 export default function CreateEvent() {
-  const [state, dispatch] = useReducer(reducer, initialForm)
+  const [state, dispatch] = useReducer(reducer, EMPTY_EVENT_FORM)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
@@ -110,18 +56,9 @@ export default function CreateEvent() {
     const { error } = await supabase.from('events').insert({
       id,
       manage_id,
-      host: state.host,
-      emoji: state.emoji,
-      accent: state.accent,
-      accent_2: state.accent_2,
-      bg: state.bg,
-      event_date: state.eventDate || null,   // '' would break a DATE column
-      landing_title: state.landingTitle,
-      landing_sub: state.landingSub,
-      cta_label: state.ctaLabel,
-      ticket_url: state.ticketUrl,
+      ...formToColumns(state),
       sections,
-      // `paid` stays false (DB default). Unit 4's payment flips it live.
+      // `paid` stays false (DB default). Only the Paystack webhook flips it.
     })
 
     setSubmitting(false)

@@ -4,6 +4,8 @@ This is the file that keeps track of all that we do & even acts as a documentati
 
 ## Current Phase
 
+- **Session of Fri 7 Aug — EVENTS: FULL EDITING + PAYMENT ROUTING BUILT.** Blocks 1 + 2 of the user's agenda. Build green (492 modules), lint clean on every touched file. **NOT deployed, and the SQL has NOT been run yet** — see "SESSION 7 AUG" below for the two-step order that matters. Host inbox (feedback + pre-event questions) and the referral distribution system were scoped but deliberately left for next session.
+
 - **Session of Sat 1 Aug — SEO UNITS 1 + 2 BUILT (not yet deployed).** OG/Twitter tags, `X-Robots-Tag` noindex on card pages, `og-image.png`, `robots.txt`, `sitemap.xml`. `npm run build` green (486 modules). See "SEO Units 1 + 2 — DONE (1 Aug)" below. Build guide: `scrolly-letters-seo-build-guide.html` + artifact https://claude.ai/code/artifact/702611b6-99af-45df-8e64-5abd990308ea (3 interactive micro-worlds).
 - **Session of Sat 1 Aug (earlier) — BACKLOG AUDIT + PLANNING.** Audited code (not memory) against this tracker. See "Backlog Audit" and "Plan" below. Three new tracks opened: SEO/discoverability, loop engineering (CI → analytics → session ritual), and finishing Events end-to-end. *(Note: entries first written this session were mislabelled "31 Jul" — corrected to 1 Aug. "Tomorrow" in the plan = Sun 2 Aug.)*
 - **Session of Sat 25 Jul — EVENTS track: pressure-test complete, build guide next.** Chose Events over Customize for today. Ran the Socratic assumption-break first (per AI-Workflow rules). All major forks resolved — see "Event System — Spec v1" below. Next deliverable is a BUILD GUIDE (not code) for the self-serve event builder.

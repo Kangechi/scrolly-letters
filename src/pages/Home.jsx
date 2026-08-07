@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import AmbientBackground from '../components/AmbientBackground'
+import { CARD_PRICE_KES, EVENT_UNIT_PRICE_KES, UNIT_DAYS } from '../lib/pricing'
 
 /* ============================================================
    HOME — the scrolly landing (Goal 2)
@@ -204,7 +205,7 @@ function Pricing() {
       <div className="price-grid">
         <Reveal className="price-card">
           <span className="price-tag">Standard</span>
-          <p className="price-amount">KES 50<span>/ card</span></p>
+          <p className="price-amount">KES {CARD_PRICE_KES}<span>/ card</span></p>
           <ul className="price-list">
             <li>A full scrolly letter</li>
             <li>Any occasion &amp; theme</li>
@@ -214,13 +215,17 @@ function Pricing() {
         </Reveal>
         <Reveal className="price-card">
           <span className="price-tag">For Events</span>
-          <p className="price-amount">KES 500 monthly <span>/ card</span></p>
+          {/* Generated from the same constants api/pay.js charges with, so
+              this can never drift from the real price again. */}
+          <p className="price-amount">KES {EVENT_UNIT_PRICE_KES}<span>/ {UNIT_DAYS} days</span></p>
           <ul className="price-list">
-            <li>Integration to your platform</li>
-            <li>Invites, Tickets, Feedback</li>
-            <li>shareable to every attendee </li>
+            <li>Invites, tickets &amp; feedback</li>
+            <li>Your brand colours throughout</li>
+            <li>Shareable to every attendee</li>
           </ul>
-          <Link to="/create" className="cta-button">Make one now →</Link>
+          {/* Was /create — a funnel bug that sent event hosts into the
+              personal card builder, which cannot make an event. */}
+          <Link to="/event" className="cta-button">Create an event →</Link>
         </Reveal>
         <Reveal className="price-card price-card--premium" delay={0.12}>
           <span className="price-tag">Customized</span>
@@ -244,7 +249,7 @@ function FinalCta() {
       <Reveal>
         <span className="sl-section-kicker">Ready?</span>
         <h2 className="sl-section-title sl-final-title">Make someone’s day today</h2>
-        <p className="sl-section-note">It takes a few minutes and costs KES 50.</p>
+        <p className="sl-section-note">It takes a few minutes and costs KES {CARD_PRICE_KES}.</p>
         <div className="sl-hero-cta">
           <Link to="/create" className="cta-button">Create your card →</Link>
           <Link to="/customize" className="cta-button cta-button--ghost">Customize one</Link>

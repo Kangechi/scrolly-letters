@@ -1600,6 +1600,45 @@ to { opacity: 1; transform: translateY(0);}
 }
 .manage-note--keep { margin-top: 2.5rem; }
 .manage-page .cta-button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* ── EDITOR GROUPS ───────────────────────────────────────────
+   The manage form went from 6 inputs to 15 when scene editing landed. A flat
+   run of 15 is not an editor, it's a wall — grouping gives the host somewhere
+   to aim ("the scenes") that maps to a region of the preview beside them. */
+.manage-group + .manage-group {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--sl-purple-soft);
+}
+.manage-group-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sl-ink);
+  margin: 0;
+}
+.manage-group-hint {
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--sl-muted);
+  margin: 0.15rem 0 0.9rem;
+}
+
+/* The price, generated from lib/pricing.js — never typed into the markup. */
+.manage-total {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--sl-ink);
+  margin: 0.75rem 0 0.25rem;
+  text-align: center;
+}
+.manage-total span {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--sl-muted);
+}
 /* The page is a workspace, not a centred hero — let it start at the top and
    use the width. .shop-page centres and pads for single-column pages. */
 .manage-page { justify-content: flex-start; padding-left: 1.5rem; padding-right: 1.5rem; }

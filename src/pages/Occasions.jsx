@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CARD_PRICE_KES } from '../lib/pricing'
 
 /* ============================================================
    OCCASIONS — SEO Unit 5 (stage 6: "is there anything worth ranking?").
@@ -76,7 +77,7 @@ const OCCASIONS = [
 const FAQ = [
   {
     q: 'How much does a card cost?',
-    a: 'A card costs KES 50, paid once via M-Pesa. You write and preview the whole thing for free — payment only unlocks the share link.',
+    a: `A card costs KES ${CARD_PRICE_KES}, paid once via M-Pesa. You write and preview the whole thing for free — payment only unlocks the share link.`,
   },
   {
     q: 'Does the person receiving it need an app?',
@@ -171,7 +172,7 @@ export default function Occasions() {
       <section className="sl-section sl-final">
         <Reveal>
           <h2 className="sl-section-title sl-final-title">Pick a moment, write the letter</h2>
-          <p className="sl-section-note">It takes a few minutes and costs KES 50.</p>
+          <p className="sl-section-note">It takes a few minutes and costs KES {CARD_PRICE_KES}.</p>
           <div className="sl-hero-cta">
             <Link to="/create" className="cta-button">Create your card →</Link>
             <Link to="/event" className="cta-button cta-button--ghost">Hosting an event?</Link>
