@@ -150,7 +150,7 @@ export default function CreateEvent() {
 
         <label className="scene-label">Details (date · venue · price)</label>
         <textarea className="create-input create-textarea"
-          placeholder="24th July · 5:30PM · Hackhouse · KES 2,200"
+          placeholder="24th July · 5:30PM · Easton · KES 2,200"
           value={state.detailsText} onChange={bind('detailsText')} />
 
         <label className="scene-label">Questions-to-host prompt</label>
