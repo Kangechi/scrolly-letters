@@ -444,3 +444,152 @@ The goals for today is:
 - **Digibouquet takeaways:** landing = hero + few decisive CTAs; builder launched in modes via URL param (`?mode=color`/`mono`); "View Garden" = example gallery. Kept the *example-gallery* and *modes/tiers* ideas; rejected the minimalism.
 - **LoveCraft takeaways (loved — concept close to ours, steal don't copy):** (1) 3D fanned showcase of real creations on landing; (2) product/feature grid w/ price pills + CTAs; (3) **split create page: form left + live preview right** (crown jewel — apply to our create/UI); (4) **Scenery Backdrop theme picker** = our customize axis; (5) occasion dropdown + AI Suggestions + char counter. NOTE: our dummy-card showcase will NOT copy LoveCraft's — will follow user's own reference photo (pending).
 - **Current code state:** App.jsx has only 3 routes (/,  /card/:id, /create). Home.jsx is the horizontal-scroll landing to be replaced; its gallery pulls REAL cards from Supabase `cards` table (that's what Goal 3 swaps for dummy cards). Create_event.jsx & Create.jsx/Create_Card.jsx exist on disk; event page not routed. Stack: React 19, Vite 8, React Router 7, Framer Motion 12, Supabase, canvas-confetti, nanoid.
+
+---
+
+# SESSION 7 AUG — Events: full editing + payment routing
+
+## ⚠️ DEPLOY ORDER (SQL FIRST, then push)
+
+`sql/2026-08-07_event_editing_and_payment.sql` must run in the Supabase SQL editor **before**
+the code deploys. Reversed, the new manage page sends `sections` in its patch to an
+`update_event` that doesn't accept it — every save silently drops the scene edits, which is
+the exact bug class this session existed to kill.
+
+Order: **run the SQL → verify with the queries at the bottom of that file → then push.**
+
+## BLOCK 1 — "edit everything" (and the bug found on the way in)
+
+**THE BUG (live in production before today):** `buildEventSections()` bakes the CTA into the
+sections JSONB — `cta: { label, href: ticketUrl }`. But `update_event` patched the *columns*
+`ticket_url` / `cta_label`, while `FeedbackScene` renders `data.cta.href` — from **sections**.
+So a host who edited their ticket link got *"Saved. Anyone opening the invite sees this now."*
+and their guests kept going to the old URL. No error, no log. Same wrong-key silent-failure
+class as the Unit 3 `data.*` mismatches.
+
+**THE FIX IS STRUCTURAL, NOT A PATCH.** New `src/lib/eventSections.js` makes the flat form the
+only editable thing and `sections` **derived data**:
+
+```
+form ──buildEventSections()──▶ sections (JSONB)
+  │
+  └──formToColumns()────────▶ columns
+        ONE input, TWO outputs, ONE save → they cannot disagree
+```
+
+- `buildEventSections(form)` — form → scenes (moved out of Create_event.jsx, now shared)
+- `parseEventForm(row)` — **the inverse**, and the load-bearing one. Scene copy exists ONLY
+  inside the sections JSONB (there are no `hero_headline` / `expected_text` columns), so
+  without it a host reopening their event would see empty textareas and **silently blank
+  their own scenes on the next save.** This is what "keeps note of what they already wrote".
+- `formToColumns(form)` — camelCase → snake_case, once, at the boundary. Note what it omits:
+  `paid`, `paid_until`, `id`, `manage_id` — same by-construction argument as the RPC allowlist.
+- Handles legacy rows where column and baked href already disagree: column wins (it holds the
+  host's most recent intent), `'#'` placeholder is read back as empty.
+
+**ManageEvent.jsx rewritten:** 6 fields → all 15, grouped (Your brand / The invite / The scenes /
+The ticket button) because a flat run of 15 inputs is a wall, not an editor. **Preview is now
+LIVE** — it renders `buildEventSections(form)`, so typing updates the scene beside you (this
+folds in Events Unit 3c). Dirty-check is field-by-field, not `JSON.stringify` (key insertion
+order differs by construction site). Save button reads "Saved" and disables when clean.
+
+**SQL:** `update_event` gains `emoji` / `accent` / `accent_2` / `bg` / `sections`, with the
+sections payload **validated and RAISED on** rather than silently ignored — must be a JSON
+array, every element's `type` in (hero, who, message, memory, feedback). `closing` (Outro) stays
+excluded: that scene is the card share+payment flow and must never render in an event invite.
+
+**KNOWN GAP, not fixed:** `CreatePreview` renders scenes only. The landing screen
+(landingTitle / landingSub / countdown / CTA) is inline JSX in CardPage, not a scene component,
+so editing "Invite headline" changes the page's h1 but not the preview. Fixing it properly
+means extracting the landing screen into a shared component — a real change, deliberately not
+smuggled into this session.
+
+## BLOCK 2 — payment routing, KES 200 / 14 days
+
+**`src/lib/pricing.js` — ONE source of truth, imported by the React app AND `/api`.** The
+client's number is decoration; `api/pay.js` recomputes from the same constants. This is what
+stops "KES 500 monthly" on the landing page drifting from "14 days" in the charge again.
+`CARD_PRICE_KES 50` · `EVENT_UNIT_PRICE_KES 200` · `UNIT_DAYS 14` · `MAX_UNITS 12`.
+
+**⚠️ VERIFY ON FIRST DEPLOY:** `/api/*.js` imports `../src/lib/pricing.js` — outside the api
+directory. Vercel's bundler (@vercel/nft) traces relative imports anywhere in the repo, so this
+should work, but it is the one new build-level assumption. If a function 500s on import,
+the fallback is to copy the constants into `api/_lib/pricing.js` and accept two files.
+
+**The four trust decisions, all implemented:**
+1. **Client never sends an amount** — it sends `units`; the server multiplies. Otherwise
+   someone pays KES 1 for six months and it logs as an ordinary successful payment.
+2. **Pay is keyed on `manage_id`, never the public id** — `priceEvent()` resolves the row
+   itself. Authorising a charge needs what authorising an edit needs.
+3. **Idempotency on the Paystack reference** — webhooks retry as *normal traffic*, not as an
+   edge case. A resend would extend `paid_until` twice = free hosting, no failed request anywhere.
+4. **Extend from `MAX(now, paid_until)`** — topping up a live event adds to its remaining time
+   instead of burning it.
+
+**Plus one the map didn't have — GUARD 2, amount verification in the webhook.** `metadata.units`
+is echoed back to us by Paystack; trusting it without checking `data.amount` against
+`units × price` would make the server-side pricing decorative. Mismatch → log, return 200, do
+not credit.
+
+**`apply_event_payment()` — ledger insert + paid_until extension in ONE Postgres function.**
+Originally planned as two supabase-js round-trips; that has a real hole — if the extend failed
+*after* the ledger insert succeeded, the retry sees a duplicate reference, skips, and the event
+stays a draft that has been paid for. One function = one transaction = the retry works.
+**Revoked from anon/authenticated** — it mints paid time, so an anon-callable version would be
+a free-hosting endpoint that skips Paystack entirely (worse than the client-amount hole).
+
+**`readMetadata()`** normalises Paystack's habit of returning metadata as a JSON *string*
+rather than an object. Untreated, `meta.kind` is undefined on some requests and the event
+silently never goes live.
+
+**Backwards compatible:** charges made before `kind` existed carry only `cardId` and are still
+routed to the card branch. The card path is otherwise untouched.
+
+**`events.payment_failed`** added, mirroring `cards.payment_failed`, so a wrong PIN reports at
+once instead of after the full 2-minute timeout. Degrades gracefully — before the migration the
+column is simply undefined and falsy.
+
+## Cascade closed
+
+| Where | Was | Now |
+|---|---|---|
+| `api/pay.js` | hardcoded `amount: 5000` | `units × EVENT_UNIT_PRICE_MINOR`, server-side |
+| `api/callback.js` | `cards.paid` only | branches on `metadata.kind`; events get amount + idempotency guards |
+| `Home.jsx` Pricing | "KES 500 monthly / card" | `KES {EVENT_UNIT_PRICE_KES} / {UNIT_DAYS} days`, from the constant |
+| `Home.jsx` For-Events CTA | `Link to="/create"` | `/event` — **funnel bug fixed**, it was sending hosts to the personal card builder |
+| `Home.jsx` / `Occasions.jsx` card price | hardcoded "KES 50" x3 | `{CARD_PRICE_KES}` |
+| `eslint.config.js` | `api/` linted as browser | node globals — 6 permanent `process is not defined` false positives on the money files, gone |
+
+## Files
+
+New: `src/lib/eventSections.js` · `src/lib/pricing.js` · `sql/2026-08-07_event_editing_and_payment.sql`
+Changed: `pages/ManageEvent.jsx` (rewrite) · `pages/Create_event.jsx` · `pages/Home.jsx` ·
+`pages/Occasions.jsx` · `api/pay.js` · `api/callback.js` · `index.css` (`.manage-group*`,
+`.manage-total`) · `eslint.config.js`
+
+Build green, 492 modules. Lint clean on every touched file (the 9 remaining project-wide errors
+are pre-existing in `CardPage.jsx` / `Create.jsx` / `Customize.jsx`).
+
+## Test path (after SQL + deploy)
+
+1. `/event` → create a draft → lands on `/manage/:manage_id`
+2. Edit a scene → preview updates as you type → Save → reload → **the text is still there**
+   (this is `parseEventForm` working; if textareas load empty, the SQL didn't run)
+3. Change the ticket URL → Save → the CTA at the end of the preview points at the new URL
+   (**this is the bug that was live — verify it explicitly**)
+4. Pay KES 200 → STK push → badge flips to LIVE, invite link appears
+5. Open `/card/:id` in another browser → the invite renders
+6. Check `event_payments` has exactly ONE row for that reference
+
+## NEXT SESSION
+
+1. **Host inbox** — `/manage/:manageId/feedback`. `get_event_feedback(p_manage_id)` already
+   exists in the DB and nothing consumes it. Decided this session: **one table + a `kind`
+   column** (`'question'` pre-event | `'feedback'` post-event) rather than a second table.
+   Stars must not render on a pre-event question. Needs a migration + updated RPC +
+   `FeedbackScene` sending `kind`.
+2. **Referral / distribution system** — pressure-tested this session. The structural finding:
+   distribution is NOT the bottleneck (every paid card is already a WhatsApp link to a new
+   person); **recipient → creator conversion** is, and it is unmeasured.
+3. Landing-screen preview component (the known gap above).
+4. August seasonal overlay video (still carried over from 1 Aug).

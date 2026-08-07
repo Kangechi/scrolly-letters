@@ -84,8 +84,8 @@ export default function CreateEvent() {
 
         {/* ── BRAND ───────────────────────────────── */}
         <label className="scene-label">Pick your brand colours</label>
-        <div className="create-pill-row">
-          <input type="color" value={state.accent}   onChange={bind('accent')} />
+        <div className="create-pill-row" style={{ gap: '1rem', alignContent: 'center', justifyContent: 'center'}}>
+          <input  type="color" value={state.accent}   onChange={bind('accent')} />
           <input type="color" value={state.accent_2} onChange={bind('accent_2')} />
           <input type="color" value={state.bg}       onChange={bind('bg')} />
         </div>
@@ -106,7 +106,7 @@ export default function CreateEvent() {
 
         {/* ── THE INVITE (landing screen) ──────────── */}
         <label className="scene-label">Host / organization</label>
-        <input className="create-input" placeholder="e.g. LinkedIn Local Nairobi"
+        <input className="create-input" placeholder="e.g. Builder Night Out!"
           value={state.host} onChange={bind('host')} />
 
         <label className="scene-label">Landing title</label>
@@ -114,7 +114,7 @@ export default function CreateEvent() {
           value={state.landingTitle} onChange={bind('landingTitle')} />
 
         <label className="scene-label">Landing subtitle</label>
-        <input className="create-input" placeholder="LinkedIn Local · The Unwritten Rules of Business"
+        <input className="create-input" placeholder="A night of building, drinks and networking"
           value={state.landingSub} onChange={bind('landingSub')} />
 
         <label className="scene-label">Event date</label>
@@ -131,11 +131,11 @@ export default function CreateEvent() {
 
         {/* ── THE SCENES ──────────────────────────── */}
         <label className="scene-label">Hero headline</label>
-        <input className="create-input" placeholder="The Unwritten Rules of Business"
+        <input className="create-input" placeholder="Time to breathe as a community"
           value={state.heroHeadline} onChange={bind('heroHeadline')} />
 
         <label className="scene-label">Hero sub-line</label>
-        <input className="create-input" placeholder="The lessons nobody teaches…"
+        <input className="create-input" placeholder="People with the same experiences having a conversation"
           value={state.heroSub} onChange={bind('heroSub')} />
 
         <label className="scene-label">What to expect</label>
