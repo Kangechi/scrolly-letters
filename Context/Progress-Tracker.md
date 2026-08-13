@@ -449,6 +449,10 @@ The goals for today is:
 
 # SESSION 7 AUG — Events: full editing + payment routing
 
+**Build guide:** `scrolly-letters-event-editing-build-guide.html` + artifact
+https://claude.ai/code/artifact/fbf52c3e-17a8-4baa-9de4-6ba2ca56a0d3 (6 micro-worlds: the drift
+machine, the inverse function, two keys one row, forge a request, replay the webhook, hostile patch).
+
 ## ⚠️ DEPLOY ORDER (SQL FIRST, then push)
 
 `sql/2026-08-07_event_editing_and_payment.sql` must run in the Supabase SQL editor **before**

@@ -1,6 +1,8 @@
+import { splitLines } from '../../lib/splitLines'
+
 export default function Message({data}) {
 
-    const lines = data.text.split(/(?<=[.!?])\s+/)
+    const lines = splitLines(data.text)
 
     return(
         <div className="scene-card">

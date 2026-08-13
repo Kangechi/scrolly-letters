@@ -43,6 +43,7 @@ export const EMPTY_EVENT_FORM = {
   landingSub: '',
   ctaLabel: 'Get your ticket →',
   ticketUrl: '',
+  posterUrl: '',
 
   // scene text
   heroHeadline: '',
@@ -50,7 +51,26 @@ export const EMPTY_EVENT_FORM = {
   expectedText: '',
   missText: '',
   detailsText: '',
+
+  /* ── the closing scene ──────────────────────────────────────
+     `collectFeedback` is the switch between the card's two endings:
+
+       false → "Save your seat" + the ticket button.  Both pilots.
+       true  → stars + a textarea, the original feedback form.
+
+     It defaults to FALSE because the common case is an invite, and an
+     invite that opens a feedback channel nobody is reading is worse than
+     no channel at all. An event only asks a question when its host
+     deliberately turns the ask on. */
+  collectFeedback: false,
+  closingLabel: 'Save your seat',
+  closingSub: '',
   questionsPrompt: 'Anything you want to know before the day?',
+
+  /* Second CTA. Demo Day uses it for "Join Cohort 04"; most events leave
+     it blank and it drops out of the array entirely. */
+  secondCtaLabel: '',
+  secondCtaUrl: '',
 }
 
 /* Every scene type an event is allowed to contain. The SQL guard in
@@ -92,13 +112,32 @@ export function buildEventSections(state) {
       label: 'Details about the event',
       text: state.detailsText,
     },
+    /* The closing scene. Still type 'feedback' — the SQL guard's list of
+       five types is untouched — but its two halves are now controlled
+       separately. See FeedbackScene.jsx for why this isn't a new type. */
     {
       type: 'feedback',
-      label: 'Questions for the host?',
-      prompt: state.questionsPrompt,
-      // The ONE place the ticket link is written into a scene. Because this
-      // now re-runs on every save, it can never fall behind the column.
-      cta: { label: state.ctaLabel, href: state.ticketUrl || '#' },
+
+      // The ask half. FeedbackScene treats a MISSING `ask` as true, so
+      // writing it explicitly here is what makes new events default to the
+      // ticket ending without changing what old saved events do.
+      ask: Boolean(state.collectFeedback),
+
+      label: state.collectFeedback ? 'Questions for the host?' : state.closingLabel,
+      prompt: state.collectFeedback ? state.questionsPrompt : state.closingSub,
+
+      /* The CTA half. This is the ONE place a link is written into a scene,
+         and because it re-runs on every save it can never fall behind the
+         columns. `id` matches the CHECK constraint on event_clicks — change
+         one and the other rejects the insert. */
+      ctas: [
+        { id: 'ticket', label: state.ctaLabel, href: state.ticketUrl || '#' },
+        state.secondCtaUrl && {
+          id: 'cohort',
+          label: state.secondCtaLabel || 'Learn more',
+          href: state.secondCtaUrl,
+        },
+      ].filter(Boolean),
     },
   ].filter(Boolean)
 }
@@ -125,9 +164,21 @@ export function parseEventForm(row) {
   const memory   = sceneOf(row.sections, 'memory')
   const feedback = sceneOf(row.sections, 'feedback')
 
+  /* Read the CTAs back out of whichever shape this event was saved in.
+     `ctas[]` is current; a bare `cta{}` is what every event created before
+     August 2026 has. Supporting both here is what lets those events be
+     reopened and edited without a data migration. */
+  const ctaList = Array.isArray(feedback.ctas)
+    ? feedback.ctas
+    : feedback.cta
+      ? [{ id: 'ticket', ...feedback.cta }]
+      : []
+  const primary = ctaList.find((c) => c?.id === 'ticket') || ctaList[0] || {}
+  const second = ctaList.find((c) => c?.id === 'cohort') || {}
+
   /* '#' is the placeholder buildEventSections writes when there is no ticket
      link. Reading it back as a real URL would put a literal "#" in the field. */
-  const bakedHref = feedback.cta?.href && feedback.cta.href !== '#' ? feedback.cta.href : ''
+  const bakedHref = primary.href && primary.href !== '#' ? primary.href : ''
 
   return {
     host:      row.host      ?? '',
@@ -142,15 +193,30 @@ export function parseEventForm(row) {
     // Column first, baked-in href as fallback: rows saved BEFORE this fix can
     // have the two disagreeing, and the column is the one the old manage form
     // was actually writing to — so it holds the host's most recent intent.
-    ctaLabel:  row.cta_label ?? feedback.cta?.label ?? '',
+    ctaLabel:  row.cta_label ?? primary.label ?? '',
     ticketUrl: row.ticket_url || bakedHref,
+    posterUrl: row.poster_url ?? '',
 
     heroHeadline:    hero.headline ?? '',
     heroSub:         hero.sub      ?? '',
     expectedText:    who.text      ?? '',
     missText:        message.text  ?? '',
     detailsText:     memory.text   ?? '',
-    questionsPrompt: feedback.prompt ?? EMPTY_EVENT_FORM.questionsPrompt,
+
+    /* `ask !== false` mirrors FeedbackScene exactly: an event saved before
+       the key existed had a feedback form, so reopening it must show the
+       ask switched ON. Getting this backwards would let a host hit save and
+       silently delete their own feedback form. */
+    collectFeedback: feedback.ask !== false,
+
+    /* Which field the saved prompt belongs in depends on which ending this
+       event has — the two endings share one `prompt` slot in the JSONB. */
+    closingLabel:    feedback.ask === false ? feedback.label ?? EMPTY_EVENT_FORM.closingLabel : EMPTY_EVENT_FORM.closingLabel,
+    closingSub:      feedback.ask === false ? feedback.prompt ?? '' : '',
+    questionsPrompt: feedback.ask === false ? EMPTY_EVENT_FORM.questionsPrompt : feedback.prompt ?? EMPTY_EVENT_FORM.questionsPrompt,
+
+    secondCtaLabel: second.label ?? '',
+    secondCtaUrl:   second.href ?? '',
   }
 }
 
@@ -172,5 +238,8 @@ export function formToColumns(state) {
     landing_sub:   state.landingSub,
     cta_label:     state.ctaLabel,
     ticket_url:    state.ticketUrl,
+    // '' clears the poster back to "no artwork"; update_event coalesces on
+    // the key being absent, not on it being empty.
+    poster_url:    state.posterUrl,
   }
 }

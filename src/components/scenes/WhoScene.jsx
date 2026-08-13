@@ -1,5 +1,7 @@
+import { splitLines } from '../../lib/splitLines'
+
 export default function WhoScene({ data }) {
-    const lines = data.text.split(/(?<=[.!?])\s+/)
+    const lines = splitLines(data.text)
 
     return (
         <div className="scene-card">

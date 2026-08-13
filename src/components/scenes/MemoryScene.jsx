@@ -1,5 +1,7 @@
+import { splitLines } from '../../lib/splitLines'
+
 export default function MemoryScene({data, emoji}) {
-    const lines = data.text.split(/(?<=[.!?])\s+/)
+    const lines = splitLines(data.text)
 
     return(
         <div className="scene-card scene-card--sticky">
