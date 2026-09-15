@@ -3,62 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { nanoid } from 'nanoid'
 import { supabase } from '../lib/supabase'
 import CreatePreview from '../components/CreatePreview'
-
-const OCCASIONS = ['Happy Father\'s Day','Birthday', 'Anniversary', 'Thank You', 'Encouragement', 'Apology', 'Just Because']
-const THEMES = [ 'hue', 'mint', 'warm', 'lovely',  'exec', 'arsenal',  'bubbly', 'blue', 'bold', 'electric', 'burnt' ]
-const EMOJIS = ['🎉', '💌', '🌸', '✨', '🎂', '☀️', '🥹', '🎈',  '👨🏽‍🍼', '🥸','🧔🏽','👨🏽', '👔', '👑']
-
-const initialState = {
-  occasion: OCCASIONS[0],
-  recipient: '',
-  emoji: EMOJIS[0],
-  theme: THEMES[0],
-  heroSub: '',
-  whoText: '',
-  message: '',
-  memoryText: '',
-  closing: '',
-}
-
-function reducer(state, action) {
-  switch (action.type) {
-    case 'SET_FIELD':
-      return { ...state, [action.field]: action.value }
-    default:
-      return state
-  }
-}
-
-function buildSections(state) {
-  return [
-    {
-      type: 'hero',
-      headline: `A ${state.occasion.toLowerCase()} note for ${state.recipient || 'you'}`,
-      sub: state.heroSub,
-    },
-    state.whoText && {
-      type: 'who',
-      headline: 'How I see you',
-      text: state.whoText,
-    },
-    {
-      type: 'message',
-      sub: state.occasion,
-      text: state.message,
-    },
-    state.memoryText && {
-      type: 'memory',
-      label: 'A moment I carry',
-      text: state.memoryText,
-    },
-    {
-      type: 'closing',
-      sub: 'With love',
-      text: state.recipient,
-      line: state.closing,
-    },
-  ].filter(Boolean)
-}
+import CreateSwitcher from '../components/CreateSwitcher'
+// Shared with /customize so both build a card the same way.
+import { OCCASIONS, THEMES, EMOJIS, initialState, reducer, buildSections } from '../lib/cardForm'
 
 export default function Create() {
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -85,6 +32,10 @@ export default function Create() {
       theme: state.theme,
       emoji: state.emoji,
       sections,
+      // Pay-first: this card stays "not sent yet" until the webhook marks it
+      // paid. `product` is a label only — the price is derived from the row.
+      requires_payment: true,
+      product: 'card',
     })
 
     setSubmitting(false)
@@ -94,12 +45,14 @@ export default function Create() {
       return
     }
 
-    navigate(`/card/${id}`)
+    // To the checkout, not the card: the link is handed over after payment.
+    navigate(`/card/${id}/checkout`)
   }
 
   return (
     <div className={`create-layout theme-${state.theme}`}>
       <div className="scene-card create-card">
+        <CreateSwitcher tone="dark" />
         <h1 className="scene-headline">Create a Card</h1>
         <p className="scene-sub">Fill in the details below — we'll turn it into a scrolly card.</p>
 

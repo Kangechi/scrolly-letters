@@ -1,7 +1,13 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import ArrivalLines from '../arrivals/ArrivalLines'
 
-export default function HeroScene({data, emoji}) {
+/* Layout + motion, kept apart:
+     LAYOUT  — the emoji, one headline word per line, the sub. Owned here.
+     ARRIVAL — how the headline words come in. Owned by `arrival` (a look's
+               choice or a per-scene pick). null = today's CSS stagger.
+   The emoji parallax is scroll mechanics and is never touched by a look. */
+export default function HeroScene({data, emoji, arrival = null, play = true}) {
     const ref = useRef(null)
 
     const { scrollYProgress } = useScroll({
@@ -17,9 +23,12 @@ export default function HeroScene({data, emoji}) {
                 {emoji}
             </motion.span>
             <h1 className="scene-headline stacked">
-                {data.headline.split(' ').map((word, i) => (
-                    <span className='stack-word' key={i}>{word}</span>
-                ))}
+                <ArrivalLines
+                    fx={arrival}
+                    play={play}
+                    lines={data.headline.split(' ')}
+                    lineClassName="stack-word"
+                />
             </h1>
             <p className="scene-sub">{data.sub}</p>
         </div>

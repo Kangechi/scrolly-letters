@@ -1,7 +1,21 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { CARD_PRICE_KES } from '../../lib/pricing'
+import ArrivalLines from '../arrivals/ArrivalLines'
+import Signature from '../shapes/Signature'
 
-export default function Outro({ data, isPreview }) {
+/* Two generations of card pass through here:
+     LEGACY  (requires_payment false) — the sender pays HERE to unlock sharing,
+             exactly as before. Untouched.
+     NEW     (requires_payment true)  — already paid at /card/:id/checkout, so
+             whoever reaches this scene is the RECIPIENT. Offering them a pay
+             button would be wrong; offering them "make your own" is the
+             recipient → creator loop the tracker says is unmeasured.
+   The pay modal below only ever runs for legacy cards, whose price is always
+   the plain-card price. */
+export default function Outro({ data, isPreview, card, arrival = null, play = true, shape = null }) {
+  const newFlow = card?.requires_payment === true
   // One variable drives the whole modal: idle → phone → waiting → paid (or failed)
   const [paymentStep, setPaymentStep] = useState('idle')
   const [alreadyPaid, setAlreadyPaid] = useState(false)
@@ -19,7 +33,7 @@ export default function Outro({ data, isPreview }) {
   // visually), so touching paymentStep here would pop the modal open
   // before the reader has scrolled anywhere near the end.
   useEffect(() => {
-    if (isPreview) return
+    if (isPreview || newFlow) return
     supabase
       .from('cards')
       .select('paid')
@@ -28,7 +42,7 @@ export default function Outro({ data, isPreview }) {
       .then(({ data: card }) => {
         if (card?.paid) setAlreadyPaid(true)
       })
-  }, [isPreview, cardId])
+  }, [isPreview, newFlow, cardId])
 
   // ── 2. POLLING ─────────────────────────────────────────────
   // While waiting, ask Supabase every 2s "is this card paid yet?"
@@ -124,18 +138,33 @@ export default function Outro({ data, isPreview }) {
 
   return (
     <div className="scene-card">
-      <span className="scene-label">{data.sub}</span>
-      <span className="scene-label">{data.text}</span>
-      <h1 className="scene-headline stacked">
-        {data.line.split(' ').map((word, i) => (
-          <span className="stack-word" key={i}>{word}</span>
-        ))}
-      </h1>
+      {/* Shape: a handwritten sign-off instead of the stacked headline.
+          The buttons below are the same either way. */}
+      {shape === 'signature' ? (
+        <Signature pre={data.sub} line={data.line} arrival={arrival} play={play} />
+      ) : (
+        <>
+          <span className="scene-label">{data.sub}</span>
+          <span className="scene-label">{data.text}</span>
+          <h1 className="scene-headline stacked">
+            <ArrivalLines fx={arrival} play={play} lines={data.line.split(' ')} lineClassName="stack-word" />
+          </h1>
+        </>
+      )}
 
-      {!isPreview && (
+      {!isPreview && !newFlow && (
         <button className="cta-button" onClick={() => setPaymentStep(alreadyPaid ? 'paid' : 'phone')}>
           Share this card ✨
         </button>
+      )}
+
+      {!isPreview && newFlow && (
+        <Link
+          to={card?.sections?.some((s) => s.type === 'wishlist') ? '/wishlist' : '/create'}
+          className="cta-button cta-button--ghost"
+        >
+          Make one of your own ✨
+        </Link>
       )}
 
       {!isPreview && paymentStep !== 'idle' && (
@@ -154,7 +183,7 @@ export default function Outro({ data, isPreview }) {
               <>
                 <p className="scene-label">Share this card</p>
                 <p className="scene-sub" style={{ marginBottom: '1rem' }}>
-                  A one-time fee of KES 50 unlocks sharing
+                  A one-time fee of KES {CARD_PRICE_KES} unlocks sharing
                 </p>
                 <input
                   className="create-input"
@@ -165,7 +194,7 @@ export default function Outro({ data, isPreview }) {
                 />
                 {error && <p style={{ color: '#f87171', fontSize: '0.85rem' }}>{error}</p>}
                 <button className="cta-button" onClick={handlePay}>
-                  Pay KES 50 via M-Pesa
+                  Pay KES {CARD_PRICE_KES} via M-Pesa
                 </button>
               </>
             )}

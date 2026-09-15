@@ -43,7 +43,12 @@ const PAGE_META = {
   '/customize': {
     title: 'Customize your card · Scrolly Letters',
     description:
-      'Go beyond the templates — pick your own backdrop, colours and scenes to build a card that looks like nobody else’s.',
+      'A studio for your card — your own colours, a wax-sealed envelope, a letter that unfolds, polaroid memories and scenes that arrive the way you choose.',
+  },
+  '/wishlist': {
+    title: 'Make a wishlist you send as a link · Scrolly Letters',
+    description:
+      'List what you’d love for your birthday or big day. Friends tap “I’ll get this” so nobody doubles up — and nobody sees who.',
   },
   '/occasions': {
     title: 'Birthday, thank-you and anniversary cards you send as a link · Scrolly Letters',

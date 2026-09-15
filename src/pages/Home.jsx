@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import AmbientBackground from '../components/AmbientBackground'
-import { CARD_PRICE_KES, EVENT_UNIT_PRICE_KES, UNIT_DAYS } from '../lib/pricing'
+import { CARD_PRICE_KES, CUSTOM_CARD_PRICE_KES, EVENT_UNIT_PRICE_KES, UNIT_DAYS } from '../lib/pricing'
 
 /* ============================================================
    HOME — the scrolly landing (Goal 2)
@@ -229,13 +229,14 @@ function Pricing() {
         </Reveal>
         <Reveal className="price-card price-card--premium" delay={0.12}>
           <span className="price-tag">Customized</span>
-          <p className="price-amount">Coming soon</p>
+          {/* Same constant api/pay.js charges a custom card with. */}
+          <p className="price-amount">KES {CUSTOM_CARD_PRICE_KES}<span>/ card</span></p>
           <ul className="price-list">
-            <li>Premium backdrops &amp; scenes</li>
-            <li>Made-to-order touches</li>
-            <li>Priced a little higher</li>
+            <li>Your own colours, looks &amp; backdrops</li>
+            <li>A wax-sealed envelope, letters &amp; polaroids</li>
+            <li>Schedule it to open on the day</li>
           </ul>
-          <Link to="/customize" className="cta-button cta-button--ghost">Peek at customize →</Link>
+          <Link to="/customize" className="cta-button cta-button--ghost">Open the studio →</Link>
         </Reveal>
       </div>
     </section>

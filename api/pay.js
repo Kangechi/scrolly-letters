@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js"
 import {
-    CARD_PRICE_MINOR,
     EVENT_UNIT_PRICE_MINOR,
     clampUnits,
+    priceForCard,
 } from '../src/lib/pricing.js'
 
 /* ============================================================
@@ -42,20 +42,54 @@ function formatPhone(raw) {
 /* Each pricer returns { amount, email, metadata } — or { error, status }.
    The amount is computed here and NOWHERE else on the request path. */
 
-async function priceCard({ cardId }) {
-    if (!cardId) return { error: 'cardId is required', status: 400 }
 
-    // Reset any stale failure flag from a previous attempt — otherwise a
-    // retry would instantly see last time's failure and bail immediately.
-    await admin().from('cards').update({ payment_failed: false }).eq('id', cardId)
+const MAX_SCHEDULE_DAYS = 366
 
-    return {
-        amount: CARD_PRICE_MINOR,
-        email: `${cardId}@scrolly-letters.app`,
-        // cardId stays at the top level: the existing webhook reads
-        // metadata.cardId, and old in-flight charges must keep working.
-        metadata: { kind: 'card', cardId },
+/* The browser proposes a time; the server decides whether it's legal.
+   Returns { value } — an ISO string, or null for "open immediately" —
+   or { error }. */
+function parseOpensAt(raw) {
+    if (raw == null || raw === '') return { value: null }
+
+    const t = new Date(raw).getTime()
+    if (Number.isNaN(t)) return { error: 'That schedule date is not valid' }
+
+    const now = Date.now()
+    if (t > now + MAX_SCHEDULE_DAYS * 24 * 60 * 60 * 1000) {
+        return { error: 'Schedule it within a year' }
     }
+    // A time that has already passed isn't an error — the moment has come.
+    if (t <= now) return { value: null }
+
+    return { value: new Date(t).toISOString() }
+}
+
+
+async function priceCard({ cardId, opensAt }) {
+    if (!cardId) return { error: 'cardId is required', status: 400 }
+    const supabase = admin()
+
+    // select('*'), not a column list: the `style` columns don't exist until
+    // phase 2, and naming a missing column makes PostgREST fail the whole query.
+    const { data: card } = await supabase
+        .from('cards').select('*').eq('id', cardId).maybeSingle()
+    if (!card) return { error: 'Card not found', status: 404 }
+
+    if (card.paid) return { error: "This card is already paid", status: 409}
+
+    const when = parseOpensAt(opensAt)
+    if (when.error) return { error: when.error, status: 400 }
+
+    await supabase
+         .from('cards')
+         .update({payment_failed: false, opens_at: when.value})
+         .eq('id', cardId)
+
+         return {
+            amount: priceForCard(card),
+            email: `${cardId}@scrolly-letters.app`,
+            metadata: {kind: 'card', cardId},
+         }
 }
 
 async function priceEvent({ manageId, units }) {

@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import ScrollPage from "../components/ScrollPage"
 import AmbientBackground from "../components/AmbientBackground"
 import { useState, useEffect } from "react"
@@ -7,6 +7,9 @@ import { supabase } from '../lib/supabase'
 import { cardData } from '../data/cards_data'
 import { hasTicket, revokeTicket } from '../lib/ticketAccess'
 import { trackClick, CTA_IDS } from '../lib/trackClick'
+import { isLocked, formatOpensAt } from '../lib/opensAt'
+import { colorStyleOf, resolveOpening } from '../lib/design'
+import EnvelopeOpening from '../components/EnvelopeOpening'
 
 
 function getBirthdayState(birthdayStr){
@@ -106,6 +109,47 @@ function Countdown({ card }) {
         </div>
     )
 }
+/* The time-lock countdown (cards.opens_at). Separate from Countdown on
+   purpose: that one counts to a DATE and knows about "today" and "late"
+   (birthdays, events). This one counts to an exact INSTANT and, at zero,
+   hands the card over by calling onOpen. */
+function OpensCountdown({ opensAt, onOpen }) {
+    const target = Date.parse(opensAt)
+    const [left, setLeft] = useState(() => Math.max(target - Date.now(), 0))
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const ms = Math.max(target - Date.now(), 0)
+            setLeft(ms)
+            if (ms === 0) {
+                clearInterval(timer)
+                onOpen()
+            }
+        }, 1000)
+        return () => clearInterval(timer)
+    }, [target, onOpen])
+
+    const timeLeft = {
+        days:    Math.floor(left / (1000 * 60 * 60 * 24)),
+        hours:   Math.floor((left / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((left / 1000 / 60) % 60),
+        seconds: Math.floor((left / 1000) % 60),
+    }
+
+    return (
+        <div className="countdown">
+            {['days', 'hours', 'minutes', 'seconds'].map(unit => (
+                <div className="countdown-unit" key={unit}>
+                    <span className="countdown-num">
+                        {String(timeLeft[unit]).padStart(2, '0')}
+                    </span>
+                    <span className="countdown-label">{unit}</span>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export default function CardPage() {
     const {id} = useParams()
     const navigate = useNavigate()
@@ -114,6 +158,10 @@ export default function CardPage() {
     const [loading, setLoading] = useState(true)
     const [revealed, setRevealed] = useState(false)
     const [reason, setReason] = useState('missing')   // why there's no card
+    // Time-locked (opens_at in the future). Decided once when the card
+    // arrives, then released by OpensCountdown at zero — never re-derived
+    // from Date.now() during render.
+    const [locked, setLocked] = useState(false)
 
     /* Read once into state rather than calling hasTicket() during render:
        localStorage is synchronous but a render-time read makes this component
@@ -164,6 +212,7 @@ export default function CardPage() {
             if (cancelled) return
             setCard(card ?? null)
             setReason(reason ?? 'missing')
+            setLocked(isLocked(card?.opens_at))
             setLoading(false)
         })
 
@@ -185,9 +234,8 @@ export default function CardPage() {
     linkedlocal: ['#E9B824', '#4C86C6', '#0A3A6B', '#fff']
 
   }
-  const brandStyle = card?.accent
-  ? { '--accent': card.accent, '--accent-2': card.accent_2, '--bg': card.bg}
-  : undefined
+  // Events: unchanged. Cards with their own colours: validated + --card-bg.
+  const brandStyle = colorStyleOf(card)
 
 
   function handleRevealed() {
@@ -264,31 +312,86 @@ export default function CardPage() {
         )
     }
 
+    /* Pay-first cards have nothing to show until the webhook marks them paid.
+       Legacy cards (requires_payment false) never enter this branch, so every
+       card already out in the world behaves exactly as before.
+       NOTE: a client-side gate — the row itself is still readable with the
+       anon key. Server-side enforcement is logged as a follow-up. */
+    if (card.kind === 'card' && card.requires_payment && !card.paid) {
+        return (
+            <div className={`landing theme-${card.theme}`}>
+                <AmbientBackground emoji={card.emoji} />
+                <div className="landing-inner">
+                    <span className="landing-emoji">✉️</span>
+                    <h2 className="landing-title">This card hasn’t<br/>been sent yet</h2>
+                    <p className="landing-sub">If you made it, finish at checkout to send it.</p>
+                    <Link to={`/card/${id}/checkout`} className="read-me-btn">Go to checkout →</Link>
+                </div>
+            </div>
+        )
+    }
+
     if (!revealed) {
         const isEvent = card.kind === 'event'
+        const timeLocked = !isEvent && locked
+        const isWishlist = !isEvent && card.sections?.some(s => s.type === 'wishlist')
+
+        /* Studio opening: the wax-sealed envelope replaces the Read Me screen.
+           Opening it calls the same handler the button does — confetti, then
+           the scenes — so nothing downstream knows the difference. A locked
+           card still shows its countdown first; the envelope waits for it. */
+        if (!isEvent && !timeLocked && resolveOpening(card.design) === 'envelope') {
+            return (
+                <div className={`landing ${brandStyle ? '' : `theme-${card.theme}`}`} style={brandStyle}>
+                    <AmbientBackground emoji={card.emoji} />
+                    <div className="landing-inner">
+                        {card.birthday && <Countdown card={card}/>}
+                        <EnvelopeOpening
+                            addressedTo={isWishlist ? `${card.recipient || 'My'}’s wishes` : `For ${card.recipient || 'you'}`}
+                            onOpened={handleLandingClick}
+                        />
+                    </div>
+                </div>
+            )
+        }
         return(
-             <div className={`landing ${card.accent ? '' : `theme-${card.theme}`}`} style={brandStyle}>
+             <div className={`landing ${brandStyle ? '' : `theme-${card.theme}`}`} style={brandStyle}>
         <AmbientBackground emoji={card.emoji} />
         <div className="landing-inner">
           <span className="landing-emoji">{card.emoji}</span>
           <h2 className="landing-title">
             {isEvent
               ? (card.landingTitle || 'You’re invited')
-              : <>Someone sent you<br/>something special</>}
+              : timeLocked
+                ? <>Something special<br/>is on its way</>
+                : isWishlist
+                  ? <>{card.recipient || 'Someone'} shared<br/>their wishes</>
+                  : <>Someone sent you<br/>something special</>}
           </h2>
           <p className="landing-sub">
-            {isEvent ? (card.landingSub || '') : 'A message made just for you'}
+            {isEvent
+              ? (card.landingSub || '')
+              : timeLocked
+                ? `It opens ${formatOpensAt(card.opens_at)}`
+                : isWishlist
+                  ? 'Pick something to get — everyone sees what’s taken, never who took it.'
+                  : 'A message made just for you'}
           </p>
-          {
-            (card.eventDate || card.birthday) && <Countdown card={card}/>
-          }
+          {timeLocked
+            ? <OpensCountdown opensAt={card.opens_at} onOpen={() => setLocked(false)} />
+            : (card.eventDate || card.birthday) && <Countdown card={card}/>}
+
+          {/* No button while locked — at zero the countdown flips `locked`
+              and this renders, so the reader never has to refresh. */}
+          {!timeLocked && (
           <button className="read-me-btn" onClick={handleLandingClick}>
             {!isEvent
-              ? 'Read Me ✨'
+              ? (isWishlist ? 'See the list 🎁' : 'Read Me ✨')
               : gateClosed
                 ? (card.ctaLabel || 'Get your ticket →')
                 : (ticketHeld ? 'Open your invite ✨' : (card.ctaLabel || 'Open ✨'))}
           </button>
+          )}
 
           {/* Says what the button is about to do. A button that leaves for a
               payment screen without warning is the kind of surprise that

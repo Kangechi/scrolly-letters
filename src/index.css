@@ -201,6 +201,117 @@ Each recipient gets their own color personality
   50%      { background-position: 100% 50%, 0% 50%, 50% 100%, 0 0; }
 }
 
+/* ============================================================
+   LOOKS + ARRIVALS (Create Studio, Phase 2)
+   Everything below is scoped to .has-look / .look-* / .scene--styled /
+   .arr-*. A card without a look matches none of it — plain cards render
+   exactly as before.
+   ============================================================ */
+
+/* The look's backdrop layer. Positioned, so it would paint OVER unpositioned
+   scenes — styled cards lift their scenes to z-index 1 to stay on top. */
+.look-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.card-wrapper.has-look > .scene {
+  position: relative;
+  z-index: 1;
+}
+
+/* Handwritten — warm paper with faint ruled lines.
+   repeating-linear-gradient draws one 1px rule every 2.1rem, forever down
+   the card, with no image file. */
+.bd-paper .look-layer {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 2.1rem,
+      color-mix(in srgb, var(--accent-2) 14%, transparent) 2.1rem calc(2.1rem + 1px)
+    ),
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, #f6e7c8 16%, transparent), transparent 70%);
+}
+.look-handwritten .lines .line,
+.look-handwritten .stacked .stack-word {
+  font-family: 'Caveat', var(--font-serif);
+  font-weight: 600;
+}
+.look-handwritten .lines .line {
+  font-size: clamp(1.7rem, 4.4vw, 2.6rem);
+  line-height: 1.25;
+}
+
+/* Cinematic — heavier grain + an edge vignette, spaced capitals. */
+.bd-film::before { opacity: 0.16; }
+.bd-film .look-layer {
+  background: radial-gradient(130% 90% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.42) 100%);
+}
+.look-cinematic .stacked .stack-word {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Collage — a halftone dot field. One radial-gradient dot, tiled every 14px. */
+.bd-halftone .look-layer {
+  background-image: radial-gradient(color-mix(in srgb, var(--accent) 26%, transparent) 1px, transparent 1.5px);
+  background-size: 14px 14px;
+  opacity: 0.6;
+}
+.look-collage .lines .line {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem);
+}
+
+/* A styled scene hands its words to an arrival, so the CSS stagger must stand
+   down — otherwise the line fades in AND its letters animate: two motions
+   fighting over one element. */
+.scene--styled .line,
+.scene--styled .stack-word {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Arrival building blocks */
+.arr-word { display: inline-block; white-space: nowrap; }   /* never break mid-word */
+.arr-char { display: inline-block; white-space: pre; }      /* inline elements ignore transform */
+.arr-mask { overflow: hidden; padding-bottom: 0.12em; }     /* the clip */
+.arr-mask-inner { display: block; }                         /* the thing that slides */
+.arr-scrambling { color: var(--accent); opacity: 0.75; }
+.tw-caret { position: relative; }
+.tw-caret::after {
+  content: '';
+  position: absolute;
+  right: -0.1em;
+  top: 0.12em;
+  bottom: 0.12em;
+  width: 2px;
+  background: var(--accent);
+  animation: tw-blink 1s steps(1) infinite;
+}
+@keyframes tw-blink { 50% { opacity: 0; } }
+
+/* Visually hidden, still read aloud — arrivals put the whole sentence here
+   and hide the per-letter spans from screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Studio: a preview scene you can click to choose its arrival */
+.scene--selectable { cursor: pointer; border-radius: 18px; outline: 2px dashed transparent; outline-offset: -8px; transition: outline-color 0.2s; }
+.scene--selectable:hover { outline-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.scene--selected { outline: 2px solid var(--accent); }
+
 .lines .line {
   display: block;
   font-family: var(--font-serif);
@@ -1043,6 +1154,827 @@ to { opacity: 1; transform: translateY(0);}
 .preview-scroll-btn {
   display: none;
 }
+
+/* ── Checkout (/card/:id/checkout) ─────────────────────────────
+   Reuses the .create-layout grid. The preview is FIRST in the DOM so it sits
+   on the LEFT on desktop. */
+.checkout-price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--accent);
+  margin: 0.25rem 0 1rem;
+}
+.checkout-schedule {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+/* accent-color re-tints the browser's own checkbox — no custom widget needed */
+.checkout-schedule input {
+  accent-color: var(--accent);
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.checkout-view-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+/* On a phone the grid stacks, and the preview (70vh) would push the pay
+   button below the fold — the 17 Aug "unreachable pay button" problem.
+   `order: -1` lifts the pay panel above it without changing the DOM. */
+@media (max-width: 900px) {
+  .checkout-pay { order: -1; }
+}
+
+/* ============================================================
+   STUDIO (/customize, /wishlist) — the Motion Lab's shell, dressed in the
+   site's own Mauve Dusk palette (--sl-* tokens). The studio now feels like
+   the rest of Scrolly Letters, and the card on the stage is the only dark
+   thing on screen, so it reads as the object you are making.
+
+   grid-template-areas names the regions, so the desktop layout reads like a
+   picture of itself:   sidebar | stage | rail   over a full-width price bar.
+   ============================================================ */
+.studio {
+  --st-bg: var(--sl-paper);
+  --st-panel: var(--sl-surface);
+  --st-raised: #ffffff;
+  --st-line: var(--sl-border);
+  --st-ink: var(--sl-ink);
+  --st-muted: var(--sl-muted);
+  --st-accent: var(--sl-purple);
+  --st-accent-soft: var(--sl-purple-soft);
+  display: grid;
+  /* Rails scale with the window instead of eating a fixed 620px of it. */
+  grid-template-columns: clamp(210px, 17vw, 260px) minmax(0, 1fr) clamp(280px, 24vw, 360px);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "looks stage panel"
+    "bar   bar   bar";
+  height: 100dvh;
+  padding-top: 4.6rem;   /* the fixed bubble nav floats over the top */
+  box-sizing: border-box;
+  background: var(--st-bg);
+  color: var(--st-ink);
+  font-family: var(--font-body);
+}
+.studio-looks { grid-area: looks; }
+.studio-stage { grid-area: stage; }
+.studio-panel { grid-area: panel; }
+.studio-bar   { grid-area: bar; }
+
+/* Each rail scrolls on its own; the card on the stage scrolls on its own. */
+.studio-rail {
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;   /* a rail scrolls DOWN, never sideways */
+  padding: 1rem 1.1rem 1.5rem;
+  background: var(--st-panel);
+  border-right: 1px solid var(--st-line);
+}
+.studio-panel { border-right: 0; border-left: 1px solid var(--st-line); }
+
+.studio-head h1 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.6rem;
+  margin: 0.9rem 0 0.3rem;
+  color: var(--st-ink);
+}
+.studio-head h1 span { color: var(--sl-rose); }
+.studio-head p { color: var(--st-muted); font-size: 0.85rem; line-height: 1.5; margin: 0 0 0.5rem; }
+.studio-h {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--st-muted);
+  margin: 1.3rem 0 0.6rem;
+}
+
+/* ── The lab's sidebar: category labels, then items that show their
+      current value underneath, so the whole card reads as a list. ── */
+.st-cat { margin-top: 1rem; }
+.st-cat-label {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--st-muted);
+}
+.st-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--st-ink);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.st-item:hover { background: var(--st-accent-soft); }
+.st-item--on {
+  font-weight: 600;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--st-accent) 16%, transparent), transparent);
+  box-shadow: inset 2px 0 0 var(--st-accent);   /* the lab's active bar */
+}
+.st-item-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--st-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Option cards (looks, arrivals, shapes, backdrops, openings) ── */
+.look-list,
+.arrival-list { display: grid; gap: 0.5rem; }
+.look-option,
+.arrival-option {
+  display: grid;
+  gap: 0.15rem;
+  text-align: left;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--st-line);
+  background: var(--st-raised);
+  color: var(--st-ink);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.look-option:hover,
+.arrival-option:hover { border-color: color-mix(in srgb, var(--st-accent) 45%, var(--st-line)); }
+.look-option--on,
+.arrival-option--on { border-color: var(--st-accent); background: var(--st-accent-soft); }
+.look-option-name,
+.arrival-option-name { font-weight: 600; }
+.look-option-blurb,
+.arrival-option-blurb { font-size: 0.8rem; color: var(--st-muted); }
+.look-option-backdrop { font-size: 0.7rem; letter-spacing: 0.04em; color: var(--st-accent); }
+
+/* ── The stage: a topbar, then the card in a phone frame. A soft rose glow
+      from above, like the lab's stage light. min-height: 0 lets a flex child
+      shrink below its content — without it the tall card would stretch the
+      page instead of scrolling inside its frame. ── */
+.studio-stage {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.75rem 1rem 1rem;
+  background:
+    radial-gradient(900px 480px at 50% -8%, color-mix(in srgb, var(--sl-rose) 24%, transparent), transparent 70%),
+    var(--st-bg);
+}
+.studio-topbar { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.4rem; }
+.studio-topbar-look { font-weight: 600; }
+.studio-topbar-hint { margin-right: auto; font-size: 0.8rem; color: var(--st-muted); }
+
+.st-stage-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0 0.5rem;
+}
+/* 9:16 like the lab's reel stage — which is also exactly how most people
+   will open the card: on a phone. Two box-shadows draw the bezel. */
+.st-phone {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  /* On a short screen, height-driven 9:16 gets too narrow to read. A floor
+     on the width wins over the aspect ratio when the two disagree. */
+  min-width: min(340px, 100%);
+  max-width: 100%;
+  border-radius: 34px;
+  overflow: hidden;
+  background: #0b1020;
+  box-shadow:
+    0 30px 70px -26px rgba(38, 25, 46, 0.55),
+    0 0 0 8px #ffffff,
+    0 0 0 9px var(--st-line);
+}
+.st-phone .card-wrapper.preview-frame { position: relative; top: auto; height: 100%; border: 0; border-radius: 0; }
+.st-phone .landing.st-opening { min-height: 100%; height: 100%; }
+
+/* The stage is a PHONE, so the card inside must be sized like one.
+   Scene type is sized in vw — a percentage of the WINDOW. On a 1440px
+   monitor that puts desktop-sized type (an 80px headline) inside a 380px
+   frame, which no real phone ever shows. `container-type: inline-size`
+   makes the frame a size container, and `cqi` (1% of the container's width)
+   sizes the type against the FRAME instead — so what you see on the stage
+   is what their phone shows. */
+.st-phone { container-type: inline-size; }
+.st-phone .stacked .stack-word { font-size: clamp(2.1rem, 11cqi, 3.4rem); }
+.st-phone .lines .line { font-size: clamp(1.1rem, 5.4cqi, 1.45rem); }
+.st-phone .look-handwritten .lines .line { font-size: clamp(1.45rem, 7cqi, 1.9rem); }
+.st-phone .look-collage .lines .line { font-size: clamp(0.95rem, 4.4cqi, 1.2rem); }
+.st-phone .scene-sub { font-size: 0.9rem; }
+/* the older boxed preview, still valid if a page uses it */
+.studio-preview { flex: 1; min-height: 0; }
+.studio-preview .card-wrapper.preview-frame { position: relative; top: auto; height: 100%; }
+
+.studio-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--st-ink);
+  background: var(--st-raised);
+  border: 1px solid var(--st-line);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+.studio-btn:hover { border-color: var(--st-accent); }
+.studio-btn:disabled { opacity: 0.45; cursor: default; }
+.studio-btn--quiet { width: 100%; margin-top: 1rem; color: var(--st-muted); }
+
+/* The lab's underline tabs */
+.studio-tabs {
+  display: flex;
+  gap: 2px;
+  margin: -1rem -1.1rem 1rem;
+  padding: 0 0.6rem;
+  border-bottom: 1px solid var(--st-line);
+}
+.studio-tab {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.85rem 0.7rem 0.7rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--st-muted);
+  cursor: pointer;
+}
+.studio-tab:hover { color: var(--st-ink); }
+.studio-tab--on { color: var(--st-ink); border-bottom-color: var(--st-accent); font-weight: 600; }
+
+.studio-form { display: grid; gap: 0.35rem; }
+.studio-label { margin-top: 0.6rem; font-size: 0.75rem; color: var(--st-muted); }
+.studio-label em { font-style: normal; opacity: 0.6; margin-left: 0.3rem; }
+.studio-empty,
+.studio-note { color: var(--st-muted); font-size: 0.88rem; line-height: 1.5; }
+.st-notes { margin: 0; color: var(--st-ink); font-size: 0.9rem; line-height: 1.65; }
+
+/* Inputs inside the studio are light and on-brand — this overrides the dark
+   create-page styling those shared classes normally carry. */
+.studio .create-input {
+  margin: 0;
+  background: var(--st-raised);
+  color: var(--st-ink);
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+}
+.studio .create-input:focus {
+  outline: none;
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 3px var(--st-accent-soft);
+}
+.studio .create-pill { background: var(--st-raised); color: var(--st-ink); border: 1px solid var(--st-line); }
+.studio .create-pill--active { border-color: var(--st-accent); background: var(--st-accent-soft); }
+
+/* ── Controls — the lab's knob styles, restyled ── */
+.st-ctrl { margin-bottom: 1.3rem; }
+.st-ctrl-head { display: flex; align-items: baseline; gap: 0.45rem; margin-bottom: 0.5rem; font-size: 0.76rem; color: var(--st-muted); }
+.st-ctrl-head b { font-size: 0.8rem; font-weight: 600; color: var(--st-ink); }
+
+.st-swatches { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.st-swatch { width: 2rem; height: 2rem; padding: 0; border-radius: 9px; border: 1px solid rgba(0, 0, 0, 0.08); cursor: pointer; }
+/* two rings: a gap the colour of the panel, then the accent — the lab's trick */
+.st-swatch--on { box-shadow: 0 0 0 2px var(--st-panel), 0 0 0 4px var(--st-accent); }
+
+.st-palettes { display: grid; gap: 0.4rem; }
+.st-palette {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--st-line);
+  background: var(--st-raised);
+  color: var(--st-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.st-palette--on { border-color: var(--st-accent); background: var(--st-accent-soft); }
+.st-palette-dots { display: flex; padding-left: 0.3rem; }
+.st-palette-dots i { width: 1.05rem; height: 1.05rem; margin-left: -0.3rem; border-radius: 50%; border: 2px solid #fff; }
+
+.st-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.st-color { display: grid; gap: 0.3rem; font-size: 0.72rem; color: var(--st-muted); text-align: center; }
+.st-color input[type="color"] {
+  width: 100%;
+  height: 2.4rem;
+  padding: 2px;
+  border: 1px solid var(--st-line);
+  border-radius: 10px;
+  background: var(--st-raised);
+  cursor: pointer;
+}
+.st-warn {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #8a3a22;
+  background: #fbeee6;
+  border: 1px solid #f0cdb8;
+  border-radius: 8px;
+}
+
+.st-stickers { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.35rem; }
+.st-sticker {
+  aspect-ratio: 1;
+  font-size: 1.3rem;
+  border-radius: 10px;
+  border: 1px solid var(--st-line);
+  background: var(--st-raised);
+  cursor: pointer;
+}
+.st-sticker--on { border-color: var(--st-accent); background: var(--st-accent-soft); }
+
+/* ── Bottom bar ── */
+.studio-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.8rem 1.25rem;
+  background: var(--st-panel);
+  border-top: 1px solid var(--st-line);
+}
+.studio-bar-price { display: grid; margin-right: auto; }
+.studio-bar-kes { font-family: var(--font-display); font-size: 1.4rem; color: var(--st-accent); }
+.studio-bar-sub { font-size: 0.75rem; color: var(--st-muted); }
+.studio-bar-error { margin: 0; }
+.st-cta {
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.8rem 1.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--st-accent);
+  color: var(--sl-on-purple);
+  cursor: pointer;
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--st-accent) 80%, transparent);
+  transition: transform 0.15s, filter 0.15s;
+}
+.st-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.st-cta:disabled { opacity: 0.6; cursor: wait; transform: none; }
+
+/* Laptop / tablet (901–1180px): three columns get cramped. In the Customize
+   studio the category list folds into a chip strip across the top, and the
+   stage and the controls share the row beneath it. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .studio--lab {
+    grid-template-columns: minmax(0, 1fr) clamp(290px, 32vw, 340px);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "looks looks"
+      "stage panel"
+      "bar   bar";
+  }
+  .studio--lab .studio-looks {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 1rem;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--st-line);
+  }
+  .studio--lab .studio-head { flex: none; display: flex; align-items: center; gap: 0.9rem; }
+  .studio--lab .studio-head h1 { margin: 0; font-size: 1.3rem; }
+  .studio--lab .studio-head p,
+  .studio--lab .create-switcher-hint { display: none; }
+  .studio--lab .create-switcher { width: 14rem; margin: 0; }
+  .studio--lab .st-sidebar-scroll { flex: 1; min-width: 0; display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.2rem; }
+  .studio--lab .st-cat { display: contents; }
+  .studio--lab .st-cat-label { display: none; }
+  .studio--lab .st-item {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--st-line);
+    border-radius: 999px;
+    background: var(--st-raised);
+  }
+  .studio--lab .st-item-sub { display: none; }
+  .studio--lab .st-item--on { box-shadow: none; border-color: var(--st-accent); background: var(--st-accent-soft); }
+}
+
+/* Short screens (a laptop at 125% zoom is ~620px tall): give the height back
+   to the card. */
+@media (min-width: 901px) and (max-height: 760px) {
+  .studio { padding-top: 4.2rem; }
+  .studio-head p { display: none; }
+  .studio-topbar { margin-bottom: 0.2rem; }
+  .studio-bar { padding: 0.5rem 1.25rem; }
+}
+
+/* Phone: one column. The card first, then the categories, then the controls,
+   with the price bar pinned to the bottom so "Create & pay" is one tap away. */
+@media (max-width: 900px) {
+  .studio { display: flex; flex-direction: column; height: auto; min-height: 100dvh; }
+  .studio-stage { order: 1; }
+  .studio-looks { order: 2; }
+  .studio-panel { order: 3; }
+  .studio-bar   { order: 4; position: sticky; bottom: 0; z-index: 5; }
+  .studio-rail  { overflow: visible; border: 0; border-top: 1px solid var(--st-line); }
+  .studio-tabs  { margin-top: -1rem; }
+  .st-stage-wrap { flex: none; height: 72dvh; padding: 0; }
+  .st-phone { width: 100%; height: 100%; aspect-ratio: auto; border-radius: 22px; box-shadow: 0 0 0 1px var(--st-line); }
+  .studio-preview { flex: none; height: 65dvh; }
+
+  /* The sidebar becomes a sideways strip of chips. `display: contents` makes
+     each category wrapper disappear from layout, so its items become direct
+     children of the strip — same markup, no JavaScript. */
+  .st-sidebar-scroll { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.3rem; }
+  .st-cat { display: contents; }
+  .st-cat-label { display: none; }
+  .st-item {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--st-line);
+    border-radius: 999px;
+    background: var(--st-raised);
+  }
+  .st-item-sub { display: none; }
+  .st-item--on { box-shadow: none; border-color: var(--st-accent); background: var(--st-accent-soft); }
+
+  .look-list { grid-auto-flow: column; grid-auto-columns: 72%; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.4rem; }
+  .look-option { scroll-snap-align: start; }
+}
+
+/* ============================================================
+   CREATE SWITCHER — the create section's three services
+   ============================================================ */
+.create-switcher { margin-bottom: 0.9rem; }
+.create-switcher-row { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: 999px; }
+.create-switcher-link {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  text-align: center;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.create-switcher-hint { margin: 0.45rem 0 0; font-size: 0.72rem; text-align: center; }
+
+.create-switcher--light .create-switcher-row { background: var(--sl-purple-soft); }
+.create-switcher--light .create-switcher-link { color: var(--sl-ink); }
+.create-switcher--light .create-switcher-link.is-on { background: var(--sl-purple); color: var(--sl-on-purple); }
+.create-switcher--light .create-switcher-hint { color: var(--sl-muted); }
+
+.create-switcher--dark .create-switcher-row { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.create-switcher--dark .create-switcher-link { color: inherit; opacity: 0.8; }
+.create-switcher--dark .create-switcher-link.is-on { background: var(--accent); color: var(--bg); opacity: 1; }
+.create-switcher--dark .create-switcher-hint { opacity: 0.65; }
+
+/* In the studio's narrow sidebar the three services become equal tiles —
+   icon above label — so they always fit, however narrow the rail gets. */
+.studio .create-switcher-row { display: grid; grid-template-columns: repeat(3, 1fr); border-radius: 12px; }
+.studio .create-switcher-link {
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+  padding: 0.4rem 0.2rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: normal;
+  border-radius: 9px;
+}
+
+/* ============================================================
+   SCENE SHAPES — letter · polaroid · torn note · signature
+   A shaped scene drops the usual card chrome and IS its object.
+   ============================================================ */
+.scene-card--bare { background: none; border: 0; box-shadow: none; }
+
+/* Folded letter. perspective on the parent gives the panels' rotateX depth. */
+.shape-letter { width: min(100%, 36rem); margin: 0 auto; perspective: 1300px; }
+.shape-letter-panel {
+  position: relative;
+  transform-origin: top center;   /* the hinge is each panel's top edge */
+  padding: 1.5rem 1.7rem;
+  background: linear-gradient(#fdf8ee, #f6eddc);
+  color: #33291f;
+  box-shadow: 0 30px 60px -32px rgba(0, 0, 0, 0.7);
+}
+.shape-letter-panel:first-child { border-radius: 4px 4px 0 0; }
+.shape-letter-panel:last-child  { border-radius: 0 0 4px 4px; }
+.shape-letter-panel + .shape-letter-panel { border-top: 1px solid rgba(0, 0, 0, 0.08); }  /* the crease */
+.shape-letter .lines .line { color: #33291f; }
+.shape-letter-label {
+  display: block;
+  margin-bottom: 0.8rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 70%, #33291f);
+}
+.shape-letter-crease {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.35), transparent 45%);
+  pointer-events: none;
+}
+
+/* Polaroid — thin at the top and sides, deeper at the foot. */
+.shape-polaroid-wrap { display: grid; justify-items: center; gap: 1.3rem; }
+.shape-polaroid {
+  position: relative;
+  margin: 0;
+  width: min(100%, 320px);
+  padding: 12px 12px 18px;
+  background: #fffdf8;
+  border-radius: 2px;
+  box-shadow: 0 24px 40px -18px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.shape-polaroid-tape {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  width: 92px;
+  height: 26px;
+  margin-left: -46px;
+  z-index: 2;
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  clip-path: polygon(3% 12%, 97% 0, 100% 88%, 0 100%);   /* ragged tape ends */
+}
+.shape-polaroid-photo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  font-size: 3.4rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2) 60%, var(--bg));
+}
+.shape-polaroid-develop { position: absolute; inset: 0; background: #1b1a1f; }
+.shape-polaroid-caption {
+  margin-top: 14px;
+  font-family: 'Caveat', cursive;
+  font-size: clamp(1.25rem, 3.4vw, 1.6rem);
+  line-height: 1.25;
+  color: #4a4038;
+  text-align: center;
+}
+
+/* Torn note — ragged edges are one clip-path, the rules one gradient. The
+   tilt is the `rotate` property, so framer's transform can't wipe it. */
+.shape-note {
+  width: min(100%, 26rem);
+  margin: 0 auto;
+  padding: 1.4rem 1.5rem 1.6rem;
+  background: repeating-linear-gradient(#fbf6ea 0 1.75rem, #c8bda6 1.75rem calc(1.75rem + 1px));
+  box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.55);
+  clip-path: polygon(
+    0 3%, 6% 0, 22% 4%, 41% 0, 63% 4%, 82% 0, 100% 3%,
+    100% 97%, 84% 100%, 61% 96%, 39% 100%, 19% 96%, 0 100%
+  );
+  rotate: -1.2deg;
+}
+.shape-note-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8a7a62;
+}
+.shape-note .shape-note-line {
+  display: block;
+  font-family: 'Caveat', cursive;
+  font-size: clamp(1.3rem, 3.6vw, 1.7rem);
+  line-height: 1.75rem;   /* matches the ruled-line spacing, so words sit on the lines */
+  color: color-mix(in srgb, var(--accent) 55%, #5a1d24);
+}
+
+/* Signature */
+.shape-sign { display: grid; justify-items: end; gap: 0.2rem; margin-bottom: 0.5rem; text-align: right; }
+.shape-sign-pre { font-family: var(--font-serif); font-style: italic; opacity: 0.75; }
+.shape-sign-line {
+  display: inline-block;
+  font-family: 'Caveat', cursive;
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
+  font-weight: 600;
+  line-height: 1.05;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================
+   ENVELOPE OPENING — ported from the anniversary card, coloured by --accent
+   ============================================================ */
+.envo { display: flex; flex-direction: column; align-items: center; gap: 30px; perspective: 1300px; }
+.envo-body {
+  position: relative;
+  width: min(74vw, 340px);
+  aspect-ratio: 3 / 2;
+  transform-style: preserve-3d;   /* children keep their own depth */
+  cursor: pointer;
+  outline: none;
+}
+.envo-body:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 8px; border-radius: 6px; }
+.envo-back,
+.envo-front,
+.envo-flap {
+  position: absolute;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--accent) 80%, #ffffff),
+    var(--accent) 60%,
+    color-mix(in srgb, var(--accent) 65%, #000000)
+  );
+}
+.envo-back { inset: 0; border-radius: 5px; box-shadow: 0 40px 70px -28px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.25); }
+/* Exactly the envelope's height, so at rest it is completely hidden: the flap
+   covers the top, the pocket covers the bottom. Sliding it up reveals it. */
+.envo-page {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-top: 11%;
+  background: linear-gradient(#fdf7ec, #f4ead7);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 12px 26px -14px rgba(0, 0, 0, 0.45);
+}
+.envo-page-to { font-family: 'Caveat', cursive; font-size: clamp(19px, 4.6vw, 27px); color: color-mix(in srgb, var(--accent) 65%, #2a1616); }
+.envo-page-rule { width: 34%; height: 1px; background: rgba(60, 30, 30, 0.2); }
+.envo-front {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 62%;
+  filter: brightness(1.07);
+  border-radius: 0 0 5px 5px;
+  transform: translateZ(5px);    /* static, never animated — so CSS can own it */
+  clip-path: polygon(0 21%, 50% 0, 100% 21%, 100% 100%, 0 100%);
+}
+/* Not a bare triangle: a full panel with a V cut into it, deep enough to
+   overlap the pocket's shoulders (the anniversary card's bug 6). */
+.envo-flap {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 62%;
+  filter: brightness(0.9);
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
+}
+.envo-seal {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  width: clamp(56px, 14.5vw, 70px);
+  aspect-ratio: 1;
+  margin-left: calc(clamp(56px, 14.5vw, 70px) / -2);
+  margin-top: calc(clamp(56px, 14.5vw, 70px) / -2);
+  transform: translateZ(9px);    /* static wrapper owns the depth */
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.envo-seal-inner { width: 100%; height: 100%; filter: drop-shadow(0 4px 9px rgba(0, 0, 0, 0.4)); }
+.envo-wax { display: block; width: 100%; height: 100%; }
+.envo-hint { margin: 0; font-size: 10px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--accent-2); }
+
+/* ============================================================
+   STICKERS — `rotate` (inline, the tilt) and `translate` (animated, the
+   float) are separate properties, so neither overwrites the other.
+   ============================================================ */
+.card-sticker {
+  position: absolute;
+  z-index: 0;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+  animation: sticker-float 7s ease-in-out infinite;
+}
+@keyframes sticker-float {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-sticker { animation: none; }
+}
+
+/* ============================================================
+   WISHLIST — the scene friends see, and the builder's item editor.
+   ============================================================ */
+.wish-scene { width: 100%; }
+.wish-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.75rem; }
+
+/* emoji | name/price/note/link | action */
+.wish-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  /* same scroll-in as the card's lines: hidden until the scene is seen */
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.scene--visible .wish-item { opacity: 1; transform: none; }
+.scene--visible .wish-item:nth-child(2) { transition-delay: 0.1s; }
+.scene--visible .wish-item:nth-child(3) { transition-delay: 0.2s; }
+.scene--visible .wish-item:nth-child(4) { transition-delay: 0.3s; }
+.scene--visible .wish-item:nth-child(5) { transition-delay: 0.4s; }
+.scene--visible .wish-item:nth-child(n+6) { transition-delay: 0.5s; }
+.scene--visible .wish-item--taken { opacity: 0.6; }
+
+.wish-emoji { font-size: 1.8rem; }
+.wish-body { display: grid; gap: 0.15rem; min-width: 0; }
+.wish-name { font-weight: 600; font-size: 1.05rem; }
+.wish-price { font-size: 0.85rem; color: var(--accent); }
+.wish-note { font-size: 0.82rem; opacity: 0.75; }
+.wish-link { font-size: 0.8rem; color: var(--accent-2); }
+.wish-action { display: flex; align-items: center; gap: 0.4rem; }
+.wish-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  cursor: pointer;
+}
+.wish-btn:disabled { opacity: 0.6; cursor: wait; }
+.wish-btn--ghost { background: transparent; color: var(--accent); }
+.wish-status { font-size: 0.8rem; opacity: 0.85; white-space: nowrap; }
+.wish-undo {
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.wish-notice { margin-top: 1rem; font-size: 0.85rem; color: var(--accent-2); }
+
+/* Narrow: the action drops under the text instead of squeezing it */
+@media (max-width: 520px) {
+  .wish-item { grid-template-columns: auto 1fr; }
+  .wish-action { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+/* Builder: one editable card per wish */
+.wish-edit-list { display: grid; gap: 0.75rem; }
+.wish-edit {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--st-line);
+  background: var(--st-raised);
+}
+.wish-edit .create-input { margin: 0; }
+.wish-edit-top { display: flex; gap: 0.4rem; }
+.wish-edit-top select { flex: 0 0 3.6rem; }
+.wish-edit-top input { flex: 1; min-width: 0; }
+.wish-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.wish-edit-actions { display: flex; justify-content: flex-end; gap: 0.3rem; }
+
 @media (max-width: 900px) {
   .create-layout {
     grid-template-columns: 1fr;
