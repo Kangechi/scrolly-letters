@@ -45,6 +45,17 @@ export const EMPTY_EVENT_FORM = {
   ticketUrl: '',
   posterUrl: '',
 
+  /* ── the ticket gate ────────────────────────────────────────
+     `ticketGate: true` makes the invite's button leave for the checkout
+     instead of opening the scenes — the guest commits before they see the
+     lineup. Off by default so no existing event changes behaviour.
+
+     `ticketPrice` is what the GUEST pays the HOST, in whole KES. It has
+     nothing to do with pricing.js, which is what the host pays us. '' means
+     free to attend — the gate still runs, it just asks them to reserve. */
+  ticketGate: false,
+  ticketPrice: '',
+
   // scene text
   heroHeadline: '',
   heroSub: '',
@@ -197,6 +208,11 @@ export function parseEventForm(row) {
     ticketUrl: row.ticket_url || bakedHref,
     posterUrl: row.poster_url ?? '',
 
+    ticketGate:  row.ticket_gate === true,
+    // A number back into a text input has to be a string, and NULL has to
+    // come back as '' rather than 'null' — which is what String(null) gives.
+    ticketPrice: row.ticket_price == null ? '' : String(row.ticket_price),
+
     heroHeadline:    hero.headline ?? '',
     heroSub:         hero.sub      ?? '',
     expectedText:    who.text      ?? '',
@@ -241,5 +257,13 @@ export function formToColumns(state) {
     // '' clears the poster back to "no artwork"; update_event coalesces on
     // the key being absent, not on it being empty.
     poster_url:    state.posterUrl,
+
+    ticket_gate:   Boolean(state.ticketGate),
+    /* '' must become NULL, not 0: "free to attend" and "costs nothing
+       because nobody filled the field in" are the same thing here, and 0
+       would render as "KES 0" on the checkout. */
+    ticket_price:  state.ticketPrice === '' || state.ticketPrice == null
+                     ? null
+                     : Number(state.ticketPrice),
   }
 }

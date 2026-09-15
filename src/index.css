@@ -683,6 +683,130 @@ a.cta-button {
   transform: scale(1.05);
   box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 40%, transparent);
 }
+
+/* ================================
+   TICKET GATE — the landing screen's extra bits, and the checkout
+   at /card/:id/ticket. Both inherit .landing, so they sit on the
+   event's own --accent / --accent-2 / --bg without restating them.
+================================ */
+
+/* Under the button, telling the guest it's about to leave for a ticket
+   step. Quiet on purpose — it's a warning, not a second CTA. */
+.landing-gate-note {
+  margin-top: 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
+}
+
+/* The demo escape hatch. Deliberately the least prominent thing on the
+   screen: it exists for the person showing the card off, not the guest. */
+.landing-replay {
+  margin-top: 1.6rem;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: #64748b;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.landing-replay:hover { color: #94a3b8; }
+
+.checkout-inner { max-width: 30rem; }
+
+/* Said before the price, and never removed. A simulated checkout that
+   doesn't announce itself is the one genuinely harmful thing this flow
+   could become. */
+.checkout-sim {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: color-mix(in srgb, var(--accent) 75%, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  margin-bottom: 1.6rem;
+  display: inline-block;
+}
+
+.checkout-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent),
+    0 24px 60px -24px rgba(0, 0, 0, 0.8);
+  text-align: left;
+}
+
+.checkout-host {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+}
+
+.checkout-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+  color: #f4f0ea;
+}
+
+.checkout-sub {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.checkout-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+.checkout-line:first-of-type { margin-top: 1.4rem; }
+
+.checkout-line--total {
+  border-bottom: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #f4f0ea;
+}
+/* Prices line up on the decimal even as the digits change. */
+.checkout-line-value { font-variant-numeric: tabular-nums; }
+
+.checkout-pay { width: 100%; }
+.checkout-pay[disabled] { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+.checkout-fine {
+  margin-top: 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: #64748b;
+}
 .home-wrapper {
   min-height: 100vh;
   width: 100vw;

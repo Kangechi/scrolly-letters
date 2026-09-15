@@ -6,6 +6,7 @@ import CreateEvent from './pages/Create_event'
 import Customize from './pages/Customize'
 import Occasions from './pages/Occasions'
 import ManageEvent from './pages/ManageEvent'
+import TicketCheckout from './pages/TicketCheckout'
 import NotFound from './pages/NotFound'
 import BubbleNav from './components/BubbleNav'
 import PageMeta from './components/PageMeta'
@@ -18,6 +19,9 @@ export default function App() {
     <Routes>
       <Route path='/' element={<Home/>}/>
       <Route path='/card/:id' element={<CardPage/>}/>
+      {/* The ticket gate. Nested under the card's own id so the invite and
+          its checkout share one link a host can hand out. */}
+      <Route path='/card/:id/ticket' element={<TicketCheckout/>}/>
       <Route path='/create' element={<Create/>}/>
       <Route path='/event' element={<CreateEvent/>}/>
       <Route path='/customize' element={<Customize/>}/>

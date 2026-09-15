@@ -4,6 +4,8 @@ This is the file that keeps track of all that we do & even acts as a documentati
 
 ## Current Phase
 
+- **Session of Fri 14 Aug — DEMO DAY PROGRAMME BUILT + DEPLOYED (standalone, outside the app).** A separate project at `demo-day-program/` — **nothing in `scrolly-letters/` was touched, no migrations, no schema changes.** One data file renders to two surfaces: a scrolly phone programme (live at https://demo-day-program.netlify.app) and an editable PowerPoint deck for the projector. QR generated and decode-verified. **BLOCKING: every time in the running order is invented** — Demo Day is Thu 20 Aug, six days out. See "SESSION 14 AUG" below. Build guide: `scrolly-letters-demo-day-program-build-guide.html` (6 micro-worlds).
+
 - **Session of Fri 7 Aug — EVENTS: FULL EDITING + PAYMENT ROUTING BUILT.** Blocks 1 + 2 of the user's agenda. Build green (492 modules), lint clean on every touched file. **NOT deployed, and the SQL has NOT been run yet** — see "SESSION 7 AUG" below for the two-step order that matters. Host inbox (feedback + pre-event questions) and the referral distribution system were scoped but deliberately left for next session.
 
 - **Session of Sat 1 Aug — SEO UNITS 1 + 2 BUILT (not yet deployed).** OG/Twitter tags, `X-Robots-Tag` noindex on card pages, `og-image.png`, `robots.txt`, `sitemap.xml`. `npm run build` green (486 modules). See "SEO Units 1 + 2 — DONE (1 Aug)" below. Build guide: `scrolly-letters-seo-build-guide.html` + artifact https://claude.ai/code/artifact/702611b6-99af-45df-8e64-5abd990308ea (3 interactive micro-worlds).
@@ -597,3 +599,203 @@ are pre-existing in `CardPage.jsx` / `Create.jsx` / `Customize.jsx`).
    person); **recipient → creator conversion** is, and it is unmeasured.
 3. Landing-screen preview component (the known gap above).
 4. August seasonal overlay video (still carried over from 1 Aug).
+
+---
+
+## SESSION 14 AUG — DEMO DAY PROGRAMME (standalone project)
+
+**Brief:** a programme for Hackhouse Demo Day that (1) the media team scrolls through on the
+big screen during the event, and (2) the audience reaches by scanning a QR code. Not a pamphlet —
+a programme. **Explicitly scoped as a separate thing: the pilot cards and the app were not
+touched.**
+
+Lives at `demo-day-program/` in the repo root (NOT inside `scrolly-letters/`). Live at
+https://demo-day-program.netlify.app
+
+### Data collected (all real, from documents on disk)
+
+- `Hackhouse_Active_Startups_Styled_Expanded.docx` — 9 startups, sector + description
+- `HackHouse_Cohort3_Board_Report.pdf` — session log, per-founder traction, founder feedback
+- `Board_report_hackhouse_programs (1).pptx` — Demo Day plan, guest list, judges, Cohort 4 calendar
+
+### Four corrections to `pilotEvents.js` data (it was wrong, provably)
+
+| Was | Is | Source |
+|---|---|---|
+| 20 September, 2:00 PM | **Thu 20 August, 9:00am–5:00pm** | Board deck slide 13 |
+| Nine teams pitch | Ten finishers; **nine pitching** (Hackersavannah removed on instruction) | Deck + PDF |
+| "Twelve weeks of building" | **Eight weeks** — twelve is Cohort 4's design | PDF: Pre-Week→Week 8 |
+| "One night to show it" | **One day** — it is 9am–5pm | Board deck |
+
+The last two are the POSTER's own tagline. It is factually about a different cohort. The
+programme corrects it; the poster is a separate conversation.
+
+### The architectural decision (the whole session hangs off it)
+
+**Clock-driven "ON NOW" was rejected.** Events run 30–40 min late by mid-afternoon; a phone that
+computes the current segment from the clock starts naming the wrong founder. **Shared state
+(Supabase table + realtime) was also rejected** — not for engineering cost (~40 lines) but human
+cost: it stays true only if someone advances it every time the room moves, and that person is
+also fixing HDMI cables.
+
+**Shipped: static, with honest labels.** The page says `SCHEDULED 12:30`, never `ON NOW` — which
+stays true all day however late the room runs. `Jump to now ↓` is a button the READER presses, so
+the clock is a navigation aid they invoked, not a claim we made. **The wall is already live for
+free** because a human operator is watching the room.
+
+> Principle: **honesty is a property of what you claim, not of what you know.** Static state fails
+> toward "go check the wall"; live state fails toward confident wrongness.
+
+### What was built
+
+```
+program.js       the only words. 20 segments, kind: 'pitch' | 'moment'
+index.html       THE PHONE — scroll mechanic PORTED from ScrollPage.jsx + index.css
+build.js         → dist/index.html (validates, then inlines program.js)
+make-pptx.js     THE WALL — → dist/demo-day-stage.pptx, 22 slides, editable
+make-qr.js       → qr.svg / qr.png / qr-poster.html / qr-pack.pdf
+```
+
+- **`progress: [{value, label}]` not a sentence.** A sentence is trapped at one size; a
+  value/label pair renders as a scroll beat on the phone AND 38pt on the wall from one array.
+- **Scroll ported, not approximated** — IntersectionObserver threshold 0.4, one-way,
+  `.scene--hidden`→`--visible`, stagger .1/.35/.6/.85/1.1 then .18s step. Client feedback on
+  record says do not touch the scroll mechanics.
+- **PowerPoint beat the HTML presenter** — the media team already owns PowerPoint. Bought speaker
+  notes (the pitch paragraph goes in the notes, not on the wall).
+- **`timesAreDraft: true`** paints a draft band on both surfaces + a DO NOT PRINT band on the PDF.
+  Added because the `// TODO(you)` markers on each time are COMMENTS and never reach a screen.
+
+### Errors hit and fixed
+
+1. **`netlify.toml` copied into `dist/` → deploy failed, ENOENT package.json, exit 254.** `dist/`
+   is the OUTPUT of a build; the copied `[build]` section made Netlify try to build its own
+   output. **Fix: `build.js` now DERIVES a headers-only config** (everything from the first
+   `[[headers]]` on). Same category as the Guide-05 `sections` drift bug — *derive, never copy.*
+2. **Tall scene never revealed.** "The whole day" index is taller than the viewport, and an
+   element >2.5 screens can never hit a 0.4 intersection ratio. Fix: observe on `[0.05, 0.4]` and
+   accept the tall case. The ported mechanic's assumptions travelled with it.
+3. **`EBUSY` when PowerPoint has the deck open** — now a readable message instead of a stack
+   trace, since this will happen on the day.
+4. **`characterSpacing` is a pdfkit text OPTION, not a chainable method.**
+5. **npm `ECOMPROMISED — Lock compromised`** on `npx netlify-cli`: npx's lock heartbeat times out
+   on a 1129-package install. Not corruption. Fix: install locally, or use Netlify Drop.
+
+### Verified
+
+- Site live: 200 OK, 33,738 bytes, byte-identical to local build; `Cache-Control` header applied
+- `X-Robots-Tag` did NOT survive Netlify — but `<meta name="robots" content="noindex">` is in the
+  deployed HTML, which is the signal that counts
+- QR decoded with jsQR from the PNG **and** from the rendered PDF pages → exact URL match, all
+  four table cards too
+- `.pptx` unzipped and slide XML read back: 22 slides, 22 notes
+
+### BLOCKING for 20 Aug (six days out)
+
+1. **The run of show.** All 20 times invented. The shape is right; the clock is fiction.
+2. **The venue.** Appears in no document.
+3. **The traction numbers.** Every figure came from a report stamped *Confidential — Internal Use
+   Only*, flagged unverified/self-reported. Antler, Baobab, Savannah Fund, NCBA and M Oriental
+   will read them off a wall. Earthwise's were omitted — those numbers are TARGETS, not actuals.
+
+Kept out deliberately: cohort attrition, the four silent drop-outs by name, reporting-channel
+gaps, the risk register, any guest marked *to confirm*.
+
+### Open question carried forward
+
+"Come up in between" — whether the live Demo Day event card should link out to the programme (one
+anchor tag, zero schema risk) or something appears between pitches on the wall. Never resolved.
+
+---
+
+## SESSION 19 AUG — MOTION LAB + ANNIVERSARY CARD (standalone project)
+
+Lives in `motion-lab/`, outside the app. Two Vite entries: the sandbox at `index.html`, the card
+at `card.html`. Nothing in `scrolly-letters/` was touched this session.
+
+### What was built
+
+- **Motion Lab** — 22 interactive effects across typography, scroll-driven, ambient, paper/3D and
+  reel formats. Each effect is a descriptor object (id, controls schema, presets, live code
+  snippet, teaching notes); the registry globs `src/effects/**` twice — once for the module, once
+  `?raw` for the source shown in the Code tab. Adding an effect requires no wiring.
+- **The card, scene 1** — collage scramble resolving to HAPPY ANNIVERSARY (each letter locks into
+  its own typeface/colour/rotation/paper chip), then a 3D tilt button that spins 540° to hand over.
+- **The card, scene 2** — wax-sealed envelope opening once, then a continuous scrolling letter
+  where prose breaks **mid-sentence** and a taped polaroid completes it. Five moments.
+- **Build guide** — `scrolly-letters-motion-lab-build-guide.html` (microworld, with a playable
+  debug game covering the four bugs).
+
+### Errors hit and fixed
+
+1. **`(i * 7) % 7` is 0 for every i.** The collage picked one treatment per letter via a hash whose
+   multiplier shared a factor with the modulus. Rendered valid-looking output — a plain headline —
+   and threw nothing. Replaced with an integer hash.
+2. **`height: 100%` on a sticky pin** resolves against the *tall track*, not the viewport. Two
+   scroll effects rendered blank frames. Fixed to `100dvh` / measured container height.
+3. **Framer-motion rewrites the whole `transform` property**, wiping a CSS `translateZ`. The wax
+   seal dropped to Z=0 behind the flap and was invisible. `z-index` can't rescue it inside
+   `preserve-3d`. Fix: static wrapper owns the depth, animated child owns the motion.
+4. **`onAnimationComplete` fires for gesture animations.** `whileTap` springing back fired it
+   ~250ms after click, cutting off the button's 950ms spin. Moved to an explicit timer.
+5. **Conditionally mounting the CTA reflowed the centred column**, jumping the headline 22px.
+   Invisible in stills, obvious in motion. Fix: always render, animate opacity, reserve the box.
+6. **A bare-triangle envelope flap** left wedges either side where the page showed through. Flap is
+   now a full panel with a V cut into it, deep enough to overlap the pocket's shoulders.
+
+### Verified
+
+- Both entries build clean; 22/22 effects render at top and mid-scroll with zero console output
+  (automated Playwright sweep, screenshots per effect)
+- Layout jump fix measured: headline top `275px` at both `t=1.0` and `t=3.5`
+- Spin handoff measured: click → scene 2 in `1526ms` (950 spin + 500 crossfade)
+- Build guide demos verified to reproduce their bugs: bug 1 gives 1 unique treatment broken / 6
+  fixed; bug 3 jumps 22px broken / 0px fixed
+
+### Recorded as unexplained
+
+The beat-text blank frame under `AnimatePresence mode="popLayout"`. The fix is verified by
+screenshot; the mechanism is not. The obvious explanation (inline collapse under absolute
+positioning) does not survive checking, since `position: absolute` blockifies `display`. Logged in
+the guide as symptom + fix, deliberately **not** as a lesson.
+
+### DECIDED — customize page direction
+
+**Curated styles, applied whole-card.** Sender picks a feel (Handwritten / Cinematic / Reel /
+Collage) and it sets the effect for every scene coherently. Not per-scene pickers, not raw sliders.
+Reasoning: a gift card has a deadline and an audience of one; every exposed knob is a way to
+produce something worse than the default.
+
+Data contract cost is **one nullable column**:
+
+```
++ style: 'handwritten'      // card level; sections[] unchanged
+```
+
+Styles are a client-side lookup table, not rows — adding one is a deploy, not a migration. Resolve
+as `STYLES[card.style]?.[section.type] ?? DEFAULT_EFFECT[section.type]`, so every existing card
+keeps working with `style = null` and partial styles are safe.
+
+Two standing constraints this must not break: never gate indexed content behind animation (see SEO
+rules), and never touch the scroll mechanics — a style changes how a scene *arrives*, not how
+scrolling behaves.
+
+### Open questions — customize page
+
+1. **Where does the picker live?** A step inside `/create`, or a separate `/customize` after the
+   card exists? The second allows restyling an already-sent card — feature, or alarming?
+2. **Live preview per style, or a still?** Live is better and means running every style's effects
+   inside the form.
+3. **Free or paid?** Styles are the most natural paid tier the product has — but gating them means
+   the free card is visibly the plain one.
+4. **How many styles at launch?** Four feels like a choice; ten is a maintenance burden on every
+   future scene type.
+
+### Open questions — the card itself
+
+5. Her name, his name, and the anniversary date. Scene 1 and the letter still render `<<HER NAME>>`
+   placeholders. All copy is in `motion-lab/src/card/copy.js`; nothing else contains words.
+6. Dark scene 1 vs a Soft Pearl variant — the collage reference is on white, the build is on
+   Midnight. Not compared side by side yet.
+7. Photos. `public/moments/01–05.jpg`, mapped in order to the `moment` blocks. Placeholders render
+   until they exist.

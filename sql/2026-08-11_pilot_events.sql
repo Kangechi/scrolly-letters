@@ -42,6 +42,38 @@ comment on column public.events.poster_url is
   'Public URL of the event poster in the event-posters bucket. NULL is normal — the card renders without it.';
 
 
+-- ── 2b · the ticket gate ────────────────────────────────────
+--
+-- When true, the invite's button leaves for /card/:id/ticket instead of
+-- opening the scenes. The guest commits to a ticket before they see the
+-- lineup, the venue or the date.
+--
+-- DEFAULT FALSE IS THE WHOLE POINT. Every event already in the wild keeps
+-- opening the way its host expects. The two pilots switch it on by hand.
+-- If the flow proves itself, changing this default is how it cascades to
+-- everything — one line, and no existing row has to be touched.
+alter table public.events
+  add column if not exists ticket_gate boolean not null default false;
+
+comment on column public.events.ticket_gate is
+  'True = the card will not open until the guest goes through the ticket step. Default false; the pilots opt in.';
+
+-- What the GUEST pays the HOST for a seat, in whole KES.
+--
+-- NOT the same money as pricing.js. That file holds what a host pays US
+-- (KES 200 per 14-day unit) and lives in one shared constant precisely
+-- because it must never drift. This is the host's own price for their own
+-- event, so it belongs to the row, not to a constant.
+--
+-- NULL means free to attend — a real state, not missing data. The gate
+-- still runs for a free event; it just asks the guest to reserve.
+alter table public.events
+  add column if not exists ticket_price integer;
+
+comment on column public.events.ticket_price is
+  'Guest-facing ticket price in whole KES. NULL or 0 = free to attend. Unrelated to pricing.js, which is what the host pays us.';
+
+
 -- ── 3 · event_clicks ────────────────────────────────────────
 --
 -- The host's question is "did the card do anything?" The honest answer we
@@ -160,6 +192,21 @@ begin
     -- NEW. '' clears the poster (back to no artwork); absent leaves it alone.
     poster_url    = coalesce(p_patch->>'poster_url',    e.poster_url),
 
+    -- The gate and its price are HOST-editable, unlike paid/comped: a host
+    -- deciding whether their own guests pay first is a content decision,
+    -- not a money-integrity one. `::boolean` and `::integer` casts mean a
+    -- junk value raises here instead of quietly writing NULL.
+    ticket_gate   = case
+                      when p_patch ? 'ticket_gate'
+                        then (p_patch->>'ticket_gate')::boolean
+                      else e.ticket_gate
+                    end,
+    ticket_price  = case
+                      when p_patch ? 'ticket_price'
+                        then nullif(p_patch->>'ticket_price', '')::integer
+                      else e.ticket_price
+                    end,
+
     event_date    = case
                       when p_patch ? 'event_date'
                         then nullif(p_patch->>'event_date', '')::date
@@ -186,13 +233,17 @@ $$;
 -- ============================================================
 
 -- update public.events
---    set paid       = true,
---        comped     = true,
---        paid_until = '2026-09-11'          -- LinkedIn Local: event 4 Sep
+--    set paid         = true,
+--        comped       = true,
+--        paid_until   = '2026-09-11',       -- LinkedIn Local: event 4 Sep
+--        ticket_gate  = true,
+--        ticket_price = 500                 -- your number, or NULL if free
 --  where manage_id = 'PASTE_LINKEDIN_MANAGE_ID';
 
 -- update public.events
---    set paid       = true,
---        comped     = true,
---        paid_until = '2026-09-27'          -- Demo Day: event 20 Sep
+--    set paid         = true,
+--        comped       = true,
+--        paid_until   = '2026-09-27',       -- Demo Day: event 20 Sep
+--        ticket_gate  = true,
+--        ticket_price = null                -- free to attend, still gated
 --  where manage_id = 'PASTE_DEMODAY_MANAGE_ID';

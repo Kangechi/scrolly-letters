@@ -1,10 +1,12 @@
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ScrollPage from "../components/ScrollPage"
 import AmbientBackground from "../components/AmbientBackground"
 import { useState, useEffect } from "react"
 import confetti from 'canvas-confetti'
 import { supabase } from '../lib/supabase'
 import { cardData } from '../data/cards_data'
+import { hasTicket, revokeTicket } from '../lib/ticketAccess'
+import { trackClick, CTA_IDS } from '../lib/trackClick'
 
 
 function getBirthdayState(birthdayStr){
@@ -33,6 +35,13 @@ function normalizeEvent(row) {
         landingSub:   row.landing_sub,
         ctaLabel:     row.cta_label,
         ticketUrl:    row.ticket_url,
+        posterUrl:    row.poster_url,
+        /* The gate. Defaults to FALSE for every event that predates the
+           column, so nothing already out in the world starts demanding a
+           ticket overnight. The pilots switch it on; when the flow proves
+           itself the DEFAULT changes and it cascades to everything. */
+        ticketGate:   row.ticket_gate === true,
+        ticketPrice:  row.ticket_price,
         // accent / accent_2 / bg already match what brandStyle reads.
         // sections is JSONB → already an array.
     }
@@ -99,10 +108,17 @@ function Countdown({ card }) {
 }
 export default function CardPage() {
     const {id} = useParams()
+    const navigate = useNavigate()
+    const location = useLocation()
     const [card, setCard] = useState(null)
     const [loading, setLoading] = useState(true)
     const [revealed, setRevealed] = useState(false)
     const [reason, setReason] = useState('missing')   // why there's no card
+
+    /* Read once into state rather than calling hasTicket() during render:
+       localStorage is synchronous but a render-time read makes this component
+       impossible to reason about after the checkout writes the key. */
+    const [ticketHeld, setTicketHeld] = useState(() => hasTicket(id))
 
     useEffect(() => {
         let cancelled = false
@@ -188,6 +204,51 @@ export default function CardPage() {
     }, 300)
   }
 
+  /* Coming back from the checkout. TicketCheckout navigates here with
+     `state.ticketGranted`, and the guest should land INSIDE the card — not
+     on the invite screen they just paid to get past.
+
+     Runs on `card` rather than on mount, because the confetti needs the
+     card's palette and the card arrives asynchronously. */
+  useEffect(() => {
+    if (!card || revealed) return
+    if (!location.state?.ticketGranted) return
+    setTicketHeld(true)
+    handleRevealed()
+    /* Clear the flag so a refresh doesn't re-fire the confetti, and so the
+       history entry stops claiming a payment just happened. */
+    navigate(location.pathname, { replace: true, state: {} })
+  }, [card, location.state, revealed])
+
+  /* One "open" per session per card — the denominator that makes the ticket
+     click count mean anything. Counted when the card is actually shown, not
+     when the page loads, so a bot fetching the URL isn't an open. */
+  useEffect(() => {
+    if (revealed && card?.kind === 'event') trackClick(id, CTA_IDS.OPEN)
+  }, [revealed, card, id])
+
+  /* The landing button's job depends on whether this device holds a ticket.
+     GATED: it leaves for the checkout. Otherwise: it opens the card, exactly
+     as it always has. */
+  const gateClosed = card?.kind === 'event' && card.ticketGate && !ticketHeld
+
+  function handleLandingClick() {
+    if (gateClosed) {
+      navigate(`/card/${id}/ticket`)
+      return
+    }
+    handleRevealed()
+  }
+
+  /* Demo escape hatch: hand a host their phone back and let them watch the
+     whole flow again. Only rendered for a gated event this device has
+     already paid for — there is nothing to replay otherwise. */
+  function handleReplay() {
+    revokeTicket(id)
+    setTicketHeld(false)
+    setRevealed(false)
+  }
+
     if (loading) return <div className="landing"><p className="landing-sub">Loading your card…</p></div>
 
     if (!card) {
@@ -221,9 +282,28 @@ export default function CardPage() {
           {
             (card.eventDate || card.birthday) && <Countdown card={card}/>
           }
-          <button className="read-me-btn" onClick={handleRevealed}>
-            {isEvent ? (card.ctaLabel || 'Open ✨') : 'Read Me ✨'}
+          <button className="read-me-btn" onClick={handleLandingClick}>
+            {!isEvent
+              ? 'Read Me ✨'
+              : gateClosed
+                ? (card.ctaLabel || 'Get your ticket →')
+                : (ticketHeld ? 'Open your invite ✨' : (card.ctaLabel || 'Open ✨'))}
           </button>
+
+          {/* Says what the button is about to do. A button that leaves for a
+              payment screen without warning is the kind of surprise that
+              makes people close the tab. */}
+          {gateClosed && (
+            <p className="landing-gate-note">
+              Grab your ticket to open the invite
+            </p>
+          )}
+
+          {isEvent && card.ticketGate && ticketHeld && (
+            <button className="landing-replay" onClick={handleReplay}>
+              ↺ Replay from the start
+            </button>
+          )}
         </div>
       </div>
 
