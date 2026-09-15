@@ -4,6 +4,8 @@ This is the file that keeps track of all that we do & even acts as a documentati
 
 ## Current Phase
 
+- **Session of Tue 15 Sep — CREATE STUDIO: PHASES 0–5 BUILT (pay-first checkout, arrivals, Studio v2, wishlist, switcher).** Merged into `main` locally, NOT pushed. Two SQL files still to run; prices + go-live tomorrow per `scrolly-letters-pay-first-golive-guide.html`. Journal: `scrolly-letters-create-studio-journal.html`. Earlier the same day: **PLANNED + PHASE 1 STEPS 1–2 BUILT.** Planned the create section (quick card · custom card studio · wishlist → one shared checkout, time-locked scheduling). Branch `feature/create-studio` (ticket gate committed first as `899b178`). Migration applied by hand + recorded; server-side card pricing + webhook amount guard written, six first-pass bugs fixed. Lint clean, build green. **Not deployed.** See "SESSION 15 SEP" at the bottom. Journal: new chapter in `scrolly-letters-customize-port-build-guide.html`. Plan: `~/.claude/plans/i-need-us-to-smooth-fiddle.md`.
+
 - **Session of Fri 14 Aug — DEMO DAY PROGRAMME BUILT + DEPLOYED (standalone, outside the app).** A separate project at `demo-day-program/` — **nothing in `scrolly-letters/` was touched, no migrations, no schema changes.** One data file renders to two surfaces: a scrolly phone programme (live at https://demo-day-program.netlify.app) and an editable PowerPoint deck for the projector. QR generated and decode-verified. **BLOCKING: every time in the running order is invented** — Demo Day is Thu 20 Aug, six days out. See "SESSION 14 AUG" below. Build guide: `scrolly-letters-demo-day-program-build-guide.html` (6 micro-worlds).
 
 - **Session of Fri 7 Aug — EVENTS: FULL EDITING + PAYMENT ROUTING BUILT.** Blocks 1 + 2 of the user's agenda. Build green (492 modules), lint clean on every touched file. **NOT deployed, and the SQL has NOT been run yet** — see "SESSION 7 AUG" below for the two-step order that matters. Host inbox (feedback + pre-event questions) and the referral distribution system were scoped but deliberately left for next session.
@@ -799,3 +801,131 @@ scrolling behaves.
    Midnight. Not compared side by side yet.
 7. Photos. `public/moments/01–05.jpg`, mapped in order to the `moment` blocks. Placeholders render
    until they exist.
+
+---
+
+## SESSION 15 SEP — CREATE STUDIO: PLAN + PHASE 1 (STEPS 1–2)
+
+Branch `feature/create-studio`, cut from `main` after committing the ticket gate (`899b178`).
+Full plan: `C:\Users\ADMIN\.claude\plans\i-need-us-to-smooth-fiddle.md`.
+
+### DECIDED — the create section
+
+Three services, one checkout:
+
+| Service | Route | What |
+|---|---|---|
+| Quick card | `/create` | Today's form |
+| Custom card ✦ (premium) | `/customize` | Motion-Lab-style 3-pane studio: whole-card **look** + per-scene **arrival** picks |
+| Wishlist 🎁 | `/wishlist` | Celebrant lists wishes, styles, sends; friends tap "I'll get this" |
+
+Checkout = `/card/:id/checkout` (inherits the `/card/(.*)` noindex): preview left, pay right,
+optional **"Opens on"**, then a Send panel.
+
+- Customize = **looks + per-scene picks**, curated, no raw sliders (extends the 19 Aug decision).
+  **Separate premium path**, not a step in /create. Styles are **cards only** for v1.
+- Scheduling = **time-locked link**. No SMS/email delivery.
+- Wishlist = **view + claim**. No money moves; no claimer names stored. Stored as a `cards` row
+  with a `wishlist` scene; claims via security-definer RPCs (the `event_clicks` pattern).
+- Pay-first gating for **new cards only** (`requires_payment`). Old cards keep pay-to-share in Outro.
+- Price **values** change last (Phase 6). Until then all three products are KES 50 placeholders.
+
+Build order: 0 housekeeping → 1 pay-first checkout → 2 arrivals engine → 3 studio → 4 wishlist →
+5 switcher + SEO → 6 price change.
+
+### Built
+
+- **Migration** `sql/2026-09-15_create_studio_checkout.sql` — user typed it straight into the
+  Supabase SQL editor; the file was written afterwards as the record. Adds `cards.requires_payment`
+  (default false), `product`, `opens_at`, and BEFORE INSERT trigger `cards_force_unpaid` (forces
+  `paid`/`payment_failed` false and `opens_at` null — closes the anon-insert-`paid:true` hole).
+- **`src/lib/pricing.js`** — `CUSTOM_CARD_PRICE_KES`, `WISHLIST_PRICE_KES` (placeholders),
+  `productOf(row)` (derives product from contents, never a client label), `priceForCard(row)`.
+- **`api/pay.js`** — `priceCard` loads the row (`select('*')`) and charges `priceForCard(card)`.
+- **`api/callback.js`** — card branch gains **Guard 2** (amount + currency must match
+  `priceForCard`). Cards were never amount-checked before; events were.
+
+### Errors hit and fixed (first pass)
+
+1. `CARD_PRICES_KES` — extra S. **Module-load crash**: Home, pay and callback all import
+   `pricing.js`, so the whole site and every payment (events too) would have died.
+2. `CUSTOM_CARD_PRICES_KES` — same.
+3. `productOF` vs `productOf` — crash on first price computation.
+4. **Braced arrow body with no `return`** → `priceForCard` returned `undefined`. Silent: no amount
+   to Paystack, and the webhook's `5000 !== undefined` would never credit a real payment.
+   **Lint did not catch this; only running it did.**
+5. `callback.js` imported `pricingForCard` but called `priceForCard` — webhook crash on every card.
+6. Replacing the `if (isSuccess)` block deleted the `else` (sets `payment_failed`) and the card
+   branch's `return`. Silent: a wrong PIN left the payer on a 2-minute spinner.
+- Cleanup: unused `CARD_PRICE_MINOR` import in `pay.js`.
+
+Fixes 1–6 applied by Claude at the user's request, with the breakdown logged in the journal.
+
+### Verified
+
+- Columns present (read-only REST query on an existing card → `requires_payment:false`).
+- Trigger present: `pg_trigger` → `cards_force_unpaid`, `tgenabled = 'O'` (user ran it).
+- `eslint` clean on the three files. `productOf`/`priceForCard` on six rows (legacy, style,
+  overrides-only, empty overrides, wishlist, null) → correct product, 5000 each; event unit still
+  20000. `node --check` passes on both API files. `npm run build` green.
+- **Not yet verified:** a real Paystack test-mode charge end to end (needs the checkout page).
+
+### Open / owed
+
+1. **RLS policies on `cards`** — still not read. Decides how strong the "not sent yet" gate can be.
+2. **Price drift at Phase 6** — a charge started seconds before a price change would mismatch in
+   the webhook. Record the charged amount on the row at checkout when prices change.
+3. Noticed, out of scope: `event_clicks.event_id` is `uuid` but event ids are 6-char text.
+
+### Next — Phase 1 step 3
+
+`usePayment(cardId)` extracted from Outro (user types the state machine) → `PayPanel` →
+`src/pages/Checkout.jsx` at `/card/:id/checkout` → `opensAt` accepted + validated in `pay.js` →
+`Create.jsx` redirects to checkout → `CardPage` gate ("not sent yet" / timed countdown) → Outro
+hides pay for new-flow cards.
+
+### Later the same day — Phases 1 (rest) to 5, then Studio v2
+
+User typed `usePayment.js` and the `opensAt` validation in `pay.js`, then **delegated the remaining
+phases** ("take me along in the chat, log everything"). Payment VALUES stay with the user (Phase 6).
+
+- **Phase 1 done:** `Checkout.jsx` at `/card/:id/checkout` (preview left, pay right, "Opens on",
+  Send panel); `pay.js` validates `opensAt` and refuses to re-lock an already-paid card (409);
+  `CardPage` shows "not sent yet" for unpaid new cards and an `OpensCountdown` that releases at zero;
+  `Outro` shows "Make one of your own" on new cards. Bug: `priceCard({ cardId })` never took `opensAt`
+  → every card payment would 500; build passed because `/api` isn't bundled; lint caught it.
+- **Phase 2:** `src/lib/styles.js` (4 looks, `resolveArrival`), 5 arrivals copied from Motion Lab into
+  `src/components/arrivals/` (animate on `play`, not mount), `ArrivalLines`, `scene--styled`.
+  Reveal threshold fixed: `{ threshold: 0, rootMargin: '0px 0px -30% 0px' }`.
+  `sql/2026-09-15_create_studio_styles.sql` — **NOT RUN YET**.
+- **Phase 4:** wishlist = a card row with a `wishlist` scene. `Wishlist.jsx` builder, `WishlistScene`,
+  `wishClaims.js` (undo token in localStorage), `sql/2026-09-15_create_studio_wishlist.sql` — **NOT RUN YET**.
+- **Phase 5:** `CreateSwitcher` on all three pages; `/wishlist` in `PAGE_META` + sitemap; Home
+  "Customized — Coming soon" now shows `CUSTOM_CARD_PRICE_KES`.
+- **Studio v2 (user feedback: "like the motion lab, our palette, colours customizable, unfold like the
+  valentines, polaroids"):** `Customize.jsx` rewritten as a lab — categories sidebar (Words · Look ·
+  Colours · Backdrop · Stickers · Opening · each scene), phone-frame stage, Controls | How it works rail,
+  Mauve Dusk chrome. New: `src/lib/design.js` (openings, backdrops, stickers, palettes, shapes,
+  `cleanColors`, `colorStyleOf`, contrast check), shapes (`LetterSheet`, `Polaroid`, `TornNote`,
+  `Signature`), `EnvelopeOpening` (anniversary envelope, coloured by `--accent`), `OpeningPreview`,
+  `CardDecor`. Cards can now store `accent/accent_2/bg` + `design` (in the styles SQL). Polaroids use a
+  colour placeholder — **photo upload is a follow-up**.
+- **Found while building:** `--card-bg` has no root default (only theme classes set it) → custom-colour
+  cards derive one; events untouched. Preview type sized in `vw` → fixed with `container-type` + `cqi`.
+  Switcher overflowed the sidebar (user's screenshot) → 3-tile grid, rails `overflow-x: hidden`,
+  `clamp()` columns, phone min-width 340px, laptop chip-strip layout (901–1180px), short-screen tweaks.
+
+### Verified (end of day)
+
+Lint: zero new problems (9 pre-existing, compared file-by-file against HEAD). Build green, 521 modules.
+Node: `resolveArrival` 14 cases, `priceForCard` 6 rows. Browser at 1440×900: 3 panes, phone 381×677,
+Caveat applied, headline 41.9px after `cqi`, envelope opens, folded letter renders 3 panels.
+**Not verified:** the final layout pass at 1340×620 / 1100×720 / 390×844 (stopped at user's request —
+the in-app browser pane was hidden, so scripts hung); any real payment; the checkout/gate/countdown in a
+browser (need a real row); studio/wishlist inserts (SQL not run).
+
+### Tomorrow (user, solo)
+
+Follow `scrolly-letters-pay-first-golive-guide.html`: run the 2 SQL files → set prices → add
+`charged_amount` (price-drift fix, trigger must null it) → preview deploy in Paystack test mode (watch
+for Vercel preview protection blocking the webhook) → 11-point test checklist → push `main`.

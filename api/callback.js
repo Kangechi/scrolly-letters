@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import crypto from 'crypto'
-import { EVENT_UNIT_PRICE_MINOR, UNIT_DAYS, clampUnits } from '../src/lib/pricing.js'
+import { EVENT_UNIT_PRICE_MINOR, UNIT_DAYS, clampUnits, priceForCard } from '../src/lib/pricing.js'
 
 /* ============================================================
    CALLBACK — the Paystack webhook. THE ONLY WRITER of `paid` / `paid_until`.
@@ -88,12 +88,25 @@ export default async function handler(req, res) {
       if (!cardId) return res.status(200).json({ recieved: true })
 
       if (isSuccess) {
+        const { data: card } = await supabase
+          .from('cards').select('*').eq('id', cardId).maybeSingle()
+        if (!card) return res.status(200).json({ recieved: true, ignored: 'no-card' })
+
+        // GUARD 2 for cards — same rule events already follow. The price is
+        // re-derived from the row, so a card can't be credited for less than
+        // its product costs.
+        const expected = priceForCard(card)
+        if (Number(event.data?.amount) !== expected || event.data?.currency !== 'KES') {
+          console.warn('Card charge amount mismatch — not crediting', {
+            cardId, paid: event.data?.amount, expected,
+          })
+          return res.status(200).json({ recieved: true, ignored: 'amount-mismatch' })
+        }
         await supabase.from('cards').update({ paid: true }).eq('id', cardId)
       } else {
         // Any OTHER charge event about one of our cards — wrong PIN,
-        // cancelled, timeout, whatever Paystack calls it — means this
-        // attempt did not succeed. We don't need the exact event name:
-        // "charge event, not success, has our cardId" is enough signal.
+        // cancelled, timeout — means this attempt did not succeed. The
+        // polling client stops on this flag instead of waiting out 2 minutes.
         await supabase.from('cards').update({ payment_failed: true }).eq('id', cardId)
       }
       return res.status(200).json({ recieved: true })

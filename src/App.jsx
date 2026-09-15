@@ -7,6 +7,8 @@ import Customize from './pages/Customize'
 import Occasions from './pages/Occasions'
 import ManageEvent from './pages/ManageEvent'
 import TicketCheckout from './pages/TicketCheckout'
+import Checkout from './pages/Checkout'
+import Wishlist from './pages/Wishlist'
 import NotFound from './pages/NotFound'
 import BubbleNav from './components/BubbleNav'
 import PageMeta from './components/PageMeta'
@@ -22,9 +24,14 @@ export default function App() {
       {/* The ticket gate. Nested under the card's own id so the invite and
           its checkout share one link a host can hand out. */}
       <Route path='/card/:id/ticket' element={<TicketCheckout/>}/>
+      {/* The SENDER's checkout (pay-first). Nested under /card so it inherits
+          the noindex header in vercel.json and stays off PAGE_META — private
+          by default, like the card itself. */}
+      <Route path='/card/:id/checkout' element={<Checkout/>}/>
       <Route path='/create' element={<Create/>}/>
       <Route path='/event' element={<CreateEvent/>}/>
       <Route path='/customize' element={<Customize/>}/>
+      <Route path='/wishlist' element={<Wishlist/>}/>
       <Route path='/occasions' element={<Occasions/>}/>
       {/* Host's page, reached by the SECRET manage_id (not the invite id). */}
       <Route path='/manage/:manageId' element={<ManageEvent/>}/>
