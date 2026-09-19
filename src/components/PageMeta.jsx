@@ -53,7 +53,7 @@ const PAGE_META = {
   '/occasions': {
     title: 'Birthday, thank-you and anniversary cards you send as a link · Scrolly Letters',
     description:
-      'What to send and when — birthday cards, anniversary letters, thank-yous, apologies and encouragement, sent as a link that unfolds as they scroll. KES 50, no app needed.',
+      'What to send and when — birthday cards, anniversary letters, thank-yous, apologies and encouragement, sent as a link that unfolds as they scroll. From KES 150, no app needed.',
   },
 }
 

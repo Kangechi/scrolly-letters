@@ -95,7 +95,10 @@ export default async function handler(req, res) {
         // GUARD 2 for cards — same rule events already follow. The price is
         // re-derived from the row, so a card can't be credited for less than
         // its product costs.
-        const expected = priceForCard(card)
+        // What we ASKED for at charge time (pay.js records it), so a price
+        // change in between can't make a real payment look wrong. `??` covers
+        // charges started before charged_amount existed.
+        const expected = card.charged_amount ?? priceForCard(card)
         if (Number(event.data?.amount) !== expected || event.data?.currency !== 'KES') {
           console.warn('Card charge amount mismatch — not crediting', {
             cardId, paid: event.data?.amount, expected,
