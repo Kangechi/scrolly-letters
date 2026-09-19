@@ -15,14 +15,14 @@
    ============================================================ */
 
 /** One personal card, paid once, unlocks sharing. */
-export const CARD_PRICE_KES = 50
+export const CARD_PRICE_KES = 150
 
-/** A card built in /customize (a look or per-scene arrivals). PLACEHOLDER —
-    the real premium number is set in the final pricing step. */
-export const CUSTOM_CARD_PRICE_KES = 50
+/** A card built in /customize — anything productOf() calls 'custom'
+    (a look, per-scene picks, a design, or your own colours). Set 19 Sep. */
+export const CUSTOM_CARD_PRICE_KES = 300
 
-/** A wishlist. PLACEHOLDER — same reason as above. */
-export const WISHLIST_PRICE_KES = 50
+/** A wishlist — any card whose sections include a `wishlist` scene. Set 19 Sep. */
+export const WISHLIST_PRICE_KES = 150
 
 /** One EVENT unit. An event is bought in units, not subscribed to. */
 export const EVENT_UNIT_PRICE_KES = 200

@@ -929,3 +929,40 @@ browser (need a real row); studio/wishlist inserts (SQL not run).
 Follow `scrolly-letters-pay-first-golive-guide.html`: run the 2 SQL files → set prices → add
 `charged_amount` (price-drift fix, trigger must null it) → preview deploy in Paystack test mode (watch
 for Vercel preview protection blocking the webhook) → 11-point test checklist → push `main`.
+
+---
+
+## SESSION 19 SEP — PRICES SET + PRICE-DRIFT FIX (go-live steps 1–3)
+
+User ran the styles + wishlist SQL, then chose "I build, you test & push".
+
+### Checked (read-only, anon key)
+- Styles SQL **landed**: `style, style_overrides, accent, accent_2, bg, design` all readable.
+- Wishlist SQL **only partly landed**: `wish_claims` exists (returns `[]` — RLS denying, as designed), but
+  `get_wish_claims` → PGRST202 "function not found". The run most likely stopped after the table, at the
+  first function. **Action (user):** re-run `sql/2026-09-15_create_studio_wishlist.sql` in full, then
+  `notify pgrst, 'reload schema';`. If it errors, the error text is the real cause.
+
+### Built
+- **Prices** (`src/lib/pricing.js`, user's numbers): card **150** (was 50), custom **300**, wishlist **150**.
+  Events unchanged (200 / 14 days). Note: unpaid LEGACY cards also now ask 150 in their Outro pop-up —
+  old cards never stored a price. Paid cards unaffected.
+- **Hardcoded price found:** `/occasions` meta description said "KES 50" → "From KES 150".
+- **Price-drift fix:** `pay.js` prices once and records `charged_amount` (minor units) on the row;
+  `callback.js` credits `card.charged_amount ?? priceForCard(card)`. `sql/2026-09-19_charged_amount.sql`
+  adds the column and re-creates `cards_force_unpaid()` to null it on insert (else a tampered insert could
+  set charged_amount: 1). **Not run yet.**
+- **Hardening:** `pay.js` never checked its pre-charge UPDATE. With a missing column the charge would have
+  gone out while the schedule was silently dropped. Now a failed UPDATE stops with 500 "Could not prepare
+  this card for payment". Consequence: **run the charged_amount SQL before deploying this code.**
+
+### Verified
+Lint clean on touched files; both API files parse; build green (521 modules). Node: card 15000 · custom
+30000 (look or own colours) · wishlist 15000 (incl. wishlist + look) · events 20000; drift — asked 5000,
+price now 15000 → credits 5000; no charged_amount → falls back to 15000. Browser (home page text): KES 150 /
+200 / 300 and "costs KES 150". Studio bar not screenshotted (hidden pane freezes it) — reads the same
+function verified in Node.
+
+### Next (user)
+Re-run wishlist SQL → run charged_amount SQL → push `feature/create-studio` → preview test (guide step 4–5,
+watch Vercel preview protection) → merge into main → push main.

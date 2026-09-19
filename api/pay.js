@@ -80,13 +80,23 @@ async function priceCard({ cardId, opensAt }) {
     const when = parseOpensAt(opensAt)
     if (when.error) return { error: when.error, status: 400 }
 
-    await supabase
+    // Priced ONCE, here, and written down with the card. The webhook checks the
+    // payment against this recorded number rather than re-pricing — so a price
+    // change between "Pay" and Paystack's reply can't strand a real payment.
+    const amount = priceForCard(card)
+
+    const { error: prepError } = await supabase
          .from('cards')
-         .update({payment_failed: false, opens_at: when.value})
+         .update({payment_failed: false, opens_at: when.value, charged_amount: amount})
          .eq('id', cardId)
 
+    // Fail loudly. If this write silently failed (e.g. a column missing because
+    // a migration wasn't run), the charge would still go out — and the card's
+    // schedule and recorded price would be quietly lost.
+    if (prepError) return { error: 'Could not prepare this card for payment', status: 500 }
+
          return {
-            amount: priceForCard(card),
+            amount,
             email: `${cardId}@scrolly-letters.app`,
             metadata: {kind: 'card', cardId},
          }

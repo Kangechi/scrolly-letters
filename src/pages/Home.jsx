@@ -194,7 +194,8 @@ function OccasionsEvents() {
   )
 }
 
-/* ── PRICING — Goal 5: KES 50 per card. Customized priced higher (TBD). ── */
+/* ── PRICING — every number comes from src/lib/pricing.js (set 19 Sep:
+      card 150 · custom 300 · wishlist 150 · event 200 per 14 days). ── */
 function Pricing() {
   return (
     <section id="pricing" className="sl-section">
